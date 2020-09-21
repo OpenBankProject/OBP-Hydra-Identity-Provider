@@ -1,9 +1,29 @@
 # Spring Boot application as Hydra Identity Provider.
 
-## Usage
+## Install steps:
 
-### 1. Deploy obp-api server:
-The props should contains the follow settings:
+### 1. Deploy Hydra server
+Check this reference [hydra 5min-tutorial](https://www.ory.sh/hydra/docs/5min-tutorial), to install hydra, take the Docker way as example.
+Fix the quickstart.yml file as follows in environment part, the URL values is just step2 corresponding url, pay attention the leading blank characters, it is yml file.
+```
+      - URLS_CONSENT=http://localhost:8086/consent
+      - URLS_LOGIN=http://localhost:8086/login
+      - URLS_LOGOUT=http://localhost:8086/logout
+```
+execute this command to start the hydra server:
+```
+docker-compose -f quickstart.yml \
+    -f quickstart-postgres.yml \
+    -f quickstart-tracing.yml \
+    up --build
+```
+The hydra server correponding url example:
+```
+oauth2.admin_url=http://127.0.0.1:4445
+oauth2.public_url=http://127.0.0.1:4444
+```
+### 2. Deploy obp-api server:
+The props should contain the follow settings:
 ```
 ## if login_with_hydra set to true, all other props must not be empty
 login_with_hydra=true
@@ -11,7 +31,7 @@ login_with_hydra=true
 hydra_public_url=http://127.0.0.1:4444
 hydra_admin_url=http://127.0.0.1:4445
 # Consent names
-hydra_consents=ReadAccountsBasic,ReadAccountsDetail,ReadBalances,ReadTransactionsBasic,"ReadTransactionsDebits,ReadTransactionsDetail
+hydra_consents=ReadAccountsBasic,ReadAccountsDetail,ReadBalances,ReadTransactionsBasic,ReadTransactionsDebits,ReadTransactionsDetail
 ## check the oauth2.jwk_set.url props, it must contains jwks.json that locate in ${hydra_public_url}/.well-known/jwks.json
 ##oauth2.jwk_set.url=http://localhost:4444/.well-known/jwks.json,https://www.googleapis.com/oauth2/v3/certs
 ## whether create hydra client when create consumer, default is false
@@ -23,7 +43,7 @@ The obp-api server url example: `http://localhost:8080`
 Login obp-api portal, create one consumer for project `OBP-Hydra-Identity-Provider`
 The consumer_key example: `yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy`
 
-### 2. Deploy `OBP-Hydra-Identity-Provider`:
+### 3. Deploy `OBP-Hydra-Identity-Provider`:
 
 execute command: `mvn clean package`
 
@@ -51,29 +71,9 @@ execute command to start this project: `java -jar hydra-identity-provider-xxx.ja
 
 So the project running on `http://localhost:8086`
 
-### 3. Deploy Hydra server
-Check this reference [hydra 5min-tutorial](https://www.ory.sh/hydra/docs/5min-tutorial), to install hydra, take the Docker way as example.
-Fix the quickstart.yml file as follows in environment part, the URL values is just step2 corresponding url, pay attention the leading blank characters, it is yml file.
-```
-      - URLS_CONSENT=http://localhost:8086/consent
-      - URLS_LOGIN=http://localhost:8086/login
-      - URLS_LOGOUT=http://localhost:8086/logout
-```
-execute this command to start the hydra server:
-```
-docker-compose -f quickstart.yml \
-    -f quickstart-postgres.yml \
-    -f quickstart-tracing.yml \
-    up --build
-```
-The hydra server correponding url example:
-```
-oauth2.admin_url=http://127.0.0.1:4445
-oauth2.public_url=http://127.0.0.1:4444
-```
-### 4. Deploy demo project `obp-hydra-auth2`:  `https://github.com/OpenBankProject/OBP-Hydra-OAuth2`
+### 4. Deploy demo project `obp-hydra-auth2`:  [OBP-Hydra-OAuth2](https://github.com/OpenBankProject/OBP-Hydra-OAuth2)
 
-execute command: mvn clean package
+execute command: `mvn clean package`
 
 generate jar file in target folder: obp-hydra-auth2-xxx.jar
 
@@ -108,3 +108,8 @@ execute command to start this project: `java -jar obp-hydra-auth2-xxx.jar`
 So the project running on `http://localhost:8081`
 
 ### 5. open web browser with url: [http://localhost:8081/index.html](http://localhost:8081/index.html)
+
+# Videos
+[server install video](https://youtu.be/AobQ7LJQ9cs)
+
+[show uk oauth2 flow](https://youtu.be/k_6z2wk5Jqk)
