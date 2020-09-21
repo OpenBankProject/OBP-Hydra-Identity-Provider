@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
+
+    <!--[if lt IE 9]>
+    <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
+    <![endif]-->
+
+<body>
+<div id="login">
+    <h3 class="text-center text-white pt-5">Login Open Bank Project Api</h3>
+    <div class="container">
+        <div id="login-row" class="row justify-content-center align-items-center">
+            <div id="login-column" class="col-md-6 col-lg-offset-3">
+                <div class="alert alert-danger alert-dismissible col-md-12" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Warning!</strong>
+                    <span id="warning_msg" th:text="${errorMsg}">He show some error message.</span>
+                </div>
+                <div id="login-box" class="col-md-12">
+                    <form id="login-form" class="form" th:action="@{/login}" method="post">
+                        <h3 class="text-center text-info">Login</h3>
+                        <div class="form-group">
+                            <label for="username" class="text-info">Username:</label><br>
+                            <input type="text" name="username" id="username" class="form-control" th:value="${username}">
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="text-info">Password:</label><br>
+                            <input type="password" name="password" id="password" class="form-control">
+                        </div>
+                        <input type="hidden" name="login_challenge" th:name="login_challenge" th:value="${login_challenge}">
+                        <div class="form-group">
+                            <label for="remember-me" class="text-info">
+                                <input id="remember-me" name="rememberMe" type="checkbox" th:checked="${rememberMe}">
+                                <span> Remember me</span></label><br>
+                            <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
+<script type="text/javascript">
+    $(function(){
+        if($('#warning_msg').text() === '') {
+            $('.alert').addClass('hide');
+        }
+        $(":submit").click(function(e) {
+            let username = $('#username').val();
+            let password = $('#password').val();
+            if(username.trim() && password.trim()) {
+                // do nothing.
+            } else {
+                e.preventDefault();
+                $('#warning_msg').text('Username and Password are mandatory!');
+                $('.alert').removeClass('hide');
+            }
+        });
+    });
+</script>
+</body>
+</html>
