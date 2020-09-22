@@ -53,7 +53,6 @@ public class ConsentController {
         String scope = (String) session.getAttribute("scope");
         String consentId = (String) session.getAttribute("consent_id");
         Boolean rememberMe = (Boolean) session.getAttribute("rememberMe");
-        String directLoginToken = (String) session.getAttribute("directLoginToken");
         session.invalidate();
 
         ConsentRequest consentRequest = adminApi.getConsentRequest(consent_challenge);
@@ -63,7 +62,7 @@ public class ConsentController {
             AcceptConsentRequest acceptConsentRequest = new AcceptConsentRequest();
             acceptConsentRequest.setGrantScope(consentRequest.getRequestedScope());
             acceptConsentRequest.setGrantAccessTokenAudience(consentRequest.getRequestedAccessTokenAudience());
-            ConsentRequestSession hydraSession = buildConsentRequestSession(bankId, consentId, directLoginToken, username, consentRequest.getRequestedScope().contains("openid"));
+            ConsentRequestSession hydraSession = buildConsentRequestSession(bankId, consentId, username);
             acceptConsentRequest.setSession(hydraSession);
 
             CompletedRequest acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
@@ -77,7 +76,7 @@ public class ConsentController {
             acceptConsentRequest.setRemember(rememberMe);
             acceptConsentRequest.setRememberFor(3600L);
 
-            ConsentRequestSession hydraSession = buildConsentRequestSession(bankId, consentId, directLoginToken, username, scopeList.contains("openid"));
+            ConsentRequestSession hydraSession = buildConsentRequestSession(bankId, consentId, username);
             acceptConsentRequest.setSession(hydraSession);
 
             CompletedRequest acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
@@ -85,7 +84,7 @@ public class ConsentController {
         }
     }
 
-    private ConsentRequestSession buildConsentRequestSession(String bankId, String consentId, String directLoginToken, String username, boolean isOpenidFlow) {
+    private ConsentRequestSession buildConsentRequestSession(String bankId, String consentId, String username) {
         ConsentRequestSession hydraSession = new ConsentRequestSession();
 
         { // prepare id_token content
@@ -94,18 +93,6 @@ public class ConsentController {
             idTokenValues.put("family_name", username);
             idTokenValues.put("name", username);
 
-            // if flow support id_token, add email to id_token.
-            if (isOpenidFlow) {
-                HttpHeaders headers = new HttpHeaders();
-                headers.add("Authorization",
-                        "DirectLogin token=\"" + directLoginToken + "\""
-                );
-                HttpEntity<String> entity = new HttpEntity<>(headers);
-                ResponseEntity<Map> userResponse = restTemplate.exchange(currentUserUrl, HttpMethod.GET, entity, Map.class);
-                String email = (String) userResponse.getBody().get("email");
-                idTokenValues.put("email", email);
-                idTokenValues.put("email_verified", true);
-            }
             hydraSession.setIdToken(idTokenValues);
         }
         { // prepare access_token content

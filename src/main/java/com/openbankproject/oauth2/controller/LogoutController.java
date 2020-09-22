@@ -25,7 +25,7 @@ public class LogoutController {
             // validate logout_challenge value
             this.hydraAdmin.getLogoutRequest(logout_challenge);
             CompletedRequest completedRequest = hydraAdmin.acceptLogoutRequest(logout_challenge);
-            return completedRequest.getRedirectTo();
+            return "redirect:" + completedRequest.getRedirectTo();
         } catch (ApiException e) {
             logger.error("Logout fail, logout_challenge="+logout_challenge, e);
             model.addAttribute("errorMsg", "Parameter logout_challenge is not correct, hint: You can't go to this page directly, must redirect from hydra.");
