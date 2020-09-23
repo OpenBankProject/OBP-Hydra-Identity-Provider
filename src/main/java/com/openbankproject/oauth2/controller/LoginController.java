@@ -39,6 +39,9 @@ public class LoginController {
     @Value("${consumer_key}")
     private String consumerKey;
 
+    @Value("${oauth2.allowed.standard.flow:false}")
+    private boolean allowedStandardFlow;
+
     @Resource
     private RestTemplate restTemplate;
 
@@ -51,7 +54,7 @@ public class LoginController {
                                  @RequestParam Map<String, String> queryParams,
                                  Model model, HttpSession session) throws ApiException {
         model.addAllAttributes(queryParams);
-        if(session.getAttribute("bank_id") == null) {
+        if(session.getAttribute("bank_id") == null && !allowedStandardFlow) {
             model.addAttribute("errorMsg", "You can't go to this page directly, must redirect from hydra.");
             return "error";
         }

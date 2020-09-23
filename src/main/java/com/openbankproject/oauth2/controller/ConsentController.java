@@ -2,15 +2,11 @@ package com.openbankproject.oauth2.controller;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.model.AcceptConsentRequest;
@@ -23,7 +19,6 @@ import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 public class ConsentController {
@@ -36,8 +31,8 @@ public class ConsentController {
     @Value("${consumer_key}")
     private String consumerKey;
 
-    @Resource
-    private RestTemplate restTemplate;
+    @Value("${oauth2.allowed.standard.flow:false}")
+    private boolean allowedStandardFlow;
 
     @Resource
     private AdminApi adminApi;
@@ -45,11 +40,12 @@ public class ConsentController {
     //redirect by hydra to consent process
     @GetMapping(value="/consent", params = "consent_challenge")
     public String consentFromHydra(@RequestParam String consent_challenge, HttpSession session, Model model) throws ApiException {
-        if(session.getAttribute("bank_id") == null) {
+        String bankId = (String) session.getAttribute("bank_id");
+        if(bankId == null && !allowedStandardFlow) {
             model.addAttribute("errorMsg", "You can't go to this page directly, must redirect from hydra.");
             return "error";
         }
-        String bankId = (String) session.getAttribute("bank_id");
+
         String scope = (String) session.getAttribute("scope");
         String consentId = (String) session.getAttribute("consent_id");
         Boolean rememberMe = (Boolean) session.getAttribute("rememberMe");
@@ -67,7 +63,7 @@ public class ConsentController {
 
             CompletedRequest acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
             return "redirect:" + acceptConsentResponse.getRedirectTo();
-        } else {
+        } else if(bankId != null){
             AcceptConsentRequest acceptConsentRequest = new AcceptConsentRequest();
             String[] scopesArray = StringUtils.split(scope, '+');
             List<String> scopeList = Arrays.asList(scopesArray);
@@ -81,7 +77,28 @@ public class ConsentController {
 
             CompletedRequest acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
             return "redirect:" + acceptConsentResponse.getRedirectTo();
+        } else {
+            model.addAttribute("consent_challenge", consent_challenge);
+            model.addAttribute("scopes", consentRequest.getRequestedScope());
+            return "consent";
         }
+    }
+    @PostMapping(value="/consent", params = "consent_challenge")
+    public String confirmConsents(@RequestParam String consent_challenge, @RequestParam List<String> scopes, @RequestParam(defaultValue = "false") boolean rememberMe) throws ApiException {
+        ConsentRequest consentRequest = adminApi.getConsentRequest(consent_challenge);
+        String username = consentRequest.getSubject();
+        AcceptConsentRequest acceptConsentRequest = new AcceptConsentRequest();
+
+        acceptConsentRequest.setGrantScope(scopes);
+        acceptConsentRequest.setGrantAccessTokenAudience(consentRequest.getRequestedAccessTokenAudience());
+        acceptConsentRequest.setRemember(rememberMe);
+        acceptConsentRequest.setRememberFor(3600L);
+
+        ConsentRequestSession hydraSession = buildConsentRequestSession(null, null, username);
+        acceptConsentRequest.setSession(hydraSession);
+
+        CompletedRequest acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
+        return "redirect:" + acceptConsentResponse.getRedirectTo();
     }
 
     private ConsentRequestSession buildConsentRequestSession(String bankId, String consentId, String username) {
