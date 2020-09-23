@@ -53,6 +53,7 @@ Create application.properties file, and content as follows:
 ```
 # current project port number
 server.port=8086
+logging.level.com.openbankproject=DEBUG
 spring.thymeleaf.encoding=UTF-8
 spring.thymeleaf.servlet.content-type=text/html;
 
@@ -82,6 +83,7 @@ crate file `application.properties`, and the content as follow:
 # server port number
 server.port=8081
 
+logging.level.com.openbankproject=DEBUG
 # hydra server urls
 oauth2.admin_url=http://127.0.0.1:4445
 oauth2.public_url=http://127.0.0.1:4444
