@@ -21,7 +21,7 @@
     <div class="container">
         <div id="custom-row" class="row justify-content-center align-items-center">
             <div id="custom-column" class="col-md-6 col-lg-offset-3">
-                <div class="alert alert-danger alert-dismissible col-md-12" role="alert">
+                <div class="alert alert-danger alert-dismissible col-md-12 hidden" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <strong>Warning!</strong>
                     <span id="warning_msg" th:text="${errorMsg}">He show some error message.</span>
@@ -54,8 +54,8 @@
 <script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
 <script type="text/javascript">
     $(function(){
-        if($('#warning_msg').text() === '') {
-            $('.alert').addClass('hide');
+        if($('#warning_msg').text() !== '') {
+            $('.alert').removeClass('hidden');
         }
         $(":submit").click(function(e) {
             let username = $('#username').val();
@@ -65,7 +65,7 @@
             } else {
                 e.preventDefault();
                 $('#warning_msg').text('Username and Password are mandatory!');
-                $('.alert').removeClass('hide');
+                $('.alert').removeClass('hidden');
             }
         });
     });
