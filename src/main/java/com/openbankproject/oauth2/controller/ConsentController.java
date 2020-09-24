@@ -31,6 +31,9 @@ public class ConsentController {
     @Value("${consumer_key}")
     private String consumerKey;
 
+    @Value("${obp.base_url}")
+    private String obpBaseUrl;
+
     @Value("${oauth2.allowed.standard.flow:false}")
     private boolean allowedStandardFlow;
 
@@ -41,6 +44,7 @@ public class ConsentController {
     @GetMapping(value="/consent", params = "consent_challenge")
     public String consentFromHydra(@RequestParam String consent_challenge, HttpSession session, Model model) throws ApiException {
         String bankId = (String) session.getAttribute("bank_id");
+        model.addAttribute("obp_url", obpBaseUrl);
         if(bankId == null && !allowedStandardFlow) {
             model.addAttribute("errorMsg", "You can't go to this page directly, must redirect from hydra.");
             return "error";

@@ -33,6 +33,9 @@ public class LoginController {
     @Value("${oauth2.public_url}/oauth2/auth?")
     private String hydraLoginUrl;
 
+    @Value("${obp.base_url}")
+    private String obpBaseUrl;
+
     @Value("${obp.base_url}/my/logins/direct")
     private String directLoginUrl;
 
@@ -53,6 +56,7 @@ public class LoginController {
     public String loginFromHydra(@RequestParam String login_challenge,
                                  @RequestParam Map<String, String> queryParams,
                                  Model model, HttpSession session) throws ApiException {
+        model.addAttribute("obp_url", obpBaseUrl);
         model.addAllAttributes(queryParams);
         if(session.getAttribute("bank_id") == null && !allowedStandardFlow) {
             model.addAttribute("errorMsg", "You can't go to this page directly, must redirect from hydra.");
