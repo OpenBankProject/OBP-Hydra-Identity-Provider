@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.openbankproject.oauth2</groupId>
     <artifactId>hydra-identity-provider</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
+    <version>0.0.5-SNAPSHOT</version>
     <name>oauth2</name>
     <description>oauth2 login and grant consents</description>
 

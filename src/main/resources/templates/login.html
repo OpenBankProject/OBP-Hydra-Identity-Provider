@@ -34,18 +34,18 @@
                 </div>
                 <div id="custom-box" class="col-md-12">
                     <form id="custom-form" class="form" th:action="@{/login}" method="post">
-                        <h3 class="text-center text-info">Login</h3>
+                        <h3 class="text-center">Login</h3>
                         <div class="form-group">
-                            <label for="username" class="text-info">Username:</label><br>
+                            <label for="username">Username:</label><br>
                             <input type="text" name="username" id="username" class="form-control" th:value="${username}">
                         </div>
                         <div class="form-group">
-                            <label for="password" class="text-info">Password:</label><br>
+                            <label for="password">Password:</label><br>
                             <input type="password" name="password" id="password" class="form-control">
                         </div>
                         <input type="hidden" name="login_challenge" th:name="login_challenge" th:value="${login_challenge}">
                         <div class="form-group">
-                            <label for="remember-me" class="text-info">
+                            <label for="remember-me">
                                 <input id="remember-me" name="rememberMe" type="checkbox" th:checked="${rememberMe}">
                                 <span> Remember me</span></label><br>
                             <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">

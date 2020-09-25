@@ -28,7 +28,7 @@
             <div id="custom-column" class="col-md-6 col-lg-offset-3">
                 <div id="custom-box" class="col-md-12">
                     <form id="custom-form" class="form" th:action="@{/consent}" method="post">
-                        <h3 class="text-center text-info">Select one or more Consents</h3>
+                        <h3 class="text-center">Select one or more Consents</h3>
                         <div class="form-group" th:each="scope : ${scopes}">
                             <div class="checkbox" >
                                 <label>
@@ -40,7 +40,7 @@
                         <span id="scopes_error"></span>
                         <input type="hidden" th:name="consent_challenge" th:value="${consent_challenge}">
                         <div class="form-group">
-                            <label for="remember-me" class="text-info">
+                            <label for="remember-me">
                                 <input id="remember-me" name="rememberMe" type="checkbox" th:checked="${rememberMe}">
                                 <span> Remember me</span></label><br>
                             <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
