@@ -4,7 +4,10 @@ import com.openbankproject.oauth2.model.DirectLoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,17 +24,12 @@ import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 public class LoginController {
     private static Logger logger = LoggerFactory.getLogger(LoginController.class);
-
-    @Value("${oauth2.public_url}/oauth2/auth?")
-    private String hydraLoginUrl;
 
     @Value("${obp.base_url}")
     private String obpBaseUrl;
@@ -42,9 +40,6 @@ public class LoginController {
     @Value("${consumer_key}")
     private String consumerKey;
 
-    @Value("${oauth2.allowed.standard.flow:false}")
-    private boolean allowedStandardFlow;
-
     @Resource
     private RestTemplate restTemplate;
 
@@ -54,16 +49,21 @@ public class LoginController {
     //show login page
     @GetMapping(value="/login", params = "login_challenge")
     public String loginFromHydra(@RequestParam String login_challenge,
-                                 @RequestParam Map<String, String> queryParams,
-                                 Model model, HttpSession session) throws ApiException {
+                                 Model model, HttpSession session){
         model.addAttribute("obp_url", obpBaseUrl);
-        model.addAllAttributes(queryParams);
-        if(session.getAttribute("bank_id") == null && !allowedStandardFlow) {
-            model.addAttribute("errorMsg", "You can't go to this page directly, must redirect from hydra.");
-            return "error";
-        }
+        model.addAttribute("login_challenge", login_challenge);
+
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
+            String consentId = getConsentId(loginRequest.getRequestUrl());
+            if(consentId  == null) {
+                model.addAttribute(
+                        "errorMsg", "Query parameter `consent_id` is mandatory! " +
+                        "Hint: create client_credentials accessToken, create Account Access Consents by call endpoint `CreateAccountAccessConsents` (/mx-open-finance/v0.0.1/account-access-consents), " +
+                         "with header Authorization: Authorization: Bearer <accessToken>");
+                return "error";
+            }
+            session.setAttribute("consent_id", consentId);
             // login before and checked rememberMe.
             if(loginRequest.getSkip()) {
                 AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
@@ -77,29 +77,6 @@ public class LoginController {
             model.addAttribute("errorMsg", "login_challenge parameter is not correct!");
            return "error";
         }
-    }
-
-    //save bank_id to session, redirect to hydra login url
-    @GetMapping(value="/login", params = {"client_id", "bank_id", "consent_id", "response_type=code", "scope", "redirect_uri", "state"})
-    public String loginFromClient(@RequestParam String bank_id,
-                                  @RequestParam String scope,
-                                  @RequestParam String consent_id,
-                                  @RequestParam Map<String, String> queryParams, HttpSession session) {
-        // send scope value divide by "+", the received scope always divide by " ", So here recover it.
-        String scopeValueStr = scope.replace(' ', '+');
-        session.setAttribute("bank_id", bank_id);
-        session.setAttribute("scope", scopeValueStr);
-        session.setAttribute("consent_id", consent_id);
-
-        // fix scope and redirect_uri value.
-        queryParams.put("scope", scopeValueStr);
-        queryParams.put("redirect_uri", encodeQueryParam(queryParams.get("redirect_uri")));
-
-        String queryStr = queryParams.entrySet().stream()
-                .map(it -> it.getKey() + "=" + it.getValue())
-                .collect(Collectors.joining("&"));
-
-        return "redirect:" + hydraLoginUrl + queryStr;
     }
 
     //do authentication
@@ -151,11 +128,18 @@ public class LoginController {
 
     }
 
-    private String encodeQueryParam(String value) {
-        try {
-            return URLEncoder.encode(value, "UTF-8");
-        } catch (UnsupportedEncodingException impossible) {
-            logger.error("charset name is wrong", impossible);
+    private static final Pattern CONSENT_ID_PATTERN = Pattern.compile(".*?consent_id=([^&$]*).*");
+
+    /**
+     * get consent_id query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getConsentId(String authRequestUrl) {
+        Matcher matcher = CONSENT_ID_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
             return null;
         }
     }

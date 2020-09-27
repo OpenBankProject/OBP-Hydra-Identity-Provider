@@ -17,7 +17,7 @@ docker-compose -f quickstart.yml \
     -f quickstart-tracing.yml \
     up --build
 ```
-The hydra server correponding url example:
+The hydra server corresponding url example:
 ```
 oauth2.admin_url=http://127.0.0.1:4445
 oauth2.public_url=http://127.0.0.1:4444
@@ -51,22 +51,26 @@ generate jar file in target folder: hydra-identity-provider-xxx.jar
 
 Create application.properties file, and content as follows:
 ```
-# current project port number
+# server port number
 server.port=8086
+# rename the JSESSIONID cookie name, avoid local deploy other springboot instance that cause instances share the same JSESSIONID
+server.servlet.session.cookie.name=IDENTITY_PROVIDER_SESSION
+
 logging.level.com.openbankproject=DEBUG
 spring.thymeleaf.encoding=UTF-8
 spring.thymeleaf.servlet.content-type=text/html;
+
+# obp-api server url
+obp.base_url=http://localhost:8080
 
 # hydra server urls
 oauth2.admin_url=http://127.0.0.1:4445
 oauth2.public_url=http://127.0.0.1:4444
 
-# obp-api server url
-obp.base_url=http://localhost:8080
 # set consumer_key that generate in 1 step
 consumer_key=yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy
 ```
-make the application.properties file near to hydra-identity-provider-xxx.jar
+make the application.properties file in the same folder with hydra-identity-provider-xxx.jar
 
 execute command to start this project: `java -jar hydra-identity-provider-xxx.jar`
 
@@ -78,7 +82,7 @@ execute command: `mvn clean package`
 
 generate jar file in target folder: obp-hydra-auth2-xxx.jar
 
-crate file `application.properties`, and the content as follow:
+crate file `application.properties`, and the content as follows:
 ```
 # server port number
 server.port=8081
@@ -87,8 +91,7 @@ logging.level.com.openbankproject=DEBUG
 # hydra server urls
 oauth2.admin_url=http://127.0.0.1:4445
 oauth2.public_url=http://127.0.0.1:4444
-# login url that the same as hydra evironment: URLS_LOGIN
-oauth2.authenticate_url=http://localhost:8086/login
+# obp-api server url
 obp.base_url=http://localhost:8080
 
 # create one consumer, and copy OAuth2 information past here:
@@ -103,7 +106,7 @@ ReadTransactionsDebits,\
 ReadTransactionsDetail
 ```
 
-make the application.properties file near to obp-hydra-auth2-xxx.jar
+make the application.properties file in the same folder obp-hydra-auth2-xxx.jar
 
 execute command to start this project: `java -jar obp-hydra-auth2-xxx.jar`
 
