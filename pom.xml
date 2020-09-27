@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.openbankproject.oauth2</groupId>
     <artifactId>hydra-identity-provider</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>0.0.6-SNAPSHOT</version>
     <name>oauth2</name>
     <description>oauth2 login and grant consents</description>
 
@@ -27,7 +27,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
