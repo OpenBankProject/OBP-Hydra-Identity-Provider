@@ -1,5 +1,6 @@
 package com.openbankproject.oauth2.controller;
 
+import com.openbankproject.oauth2.model.Accounts;
 import com.openbankproject.oauth2.model.DirectLoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +25,10 @@ import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static com.openbankproject.oauth2.util.ControllerUtils.*;
 
 @Controller
 public class LoginController {
@@ -36,6 +39,11 @@ public class LoginController {
 
     @Value("${obp.base_url}/my/logins/direct")
     private String directLoginUrl;
+
+    @Value("${obp.base_url}/mx-open-finance/v0.0.1/account-access-consents/CONSENT_ID")
+    private String getConsentUrl;
+    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID")
+    private String getBankUrl;
 
     @Value("${consumer_key}")
     private String consumerKey;
@@ -55,7 +63,13 @@ public class LoginController {
 
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
-            String consentId = getConsentId(loginRequest.getRequestUrl());
+            String requestUrl = loginRequest.getRequestUrl();
+            String consentId = getConsentId(requestUrl);
+            String bankId = getBankId(requestUrl);
+            if(bankId == null) {
+                model.addAttribute("errorMsg", "Query parameter `bank_id` is mandatory! ");
+                return "error";
+            }
             if(consentId  == null) {
                 model.addAttribute(
                         "errorMsg", "Query parameter `consent_id` is mandatory! " +
@@ -63,7 +77,10 @@ public class LoginController {
                          "with header Authorization: Authorization: Bearer <accessToken>");
                 return "error";
             }
+            // TODO validate consentId is valid
             session.setAttribute("consent_id", consentId);
+            // TODO validate bankId is valid
+            session.setAttribute("bank_id", bankId);
             // login before and checked rememberMe.
             if(loginRequest.getSkip()) {
                 AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
@@ -86,7 +103,7 @@ public class LoginController {
                           @RequestParam String password,
                           @RequestParam(defaultValue = "false") boolean rememberMe,
                           HttpSession session,
-    RedirectAttributes redirectModel) throws ApiException {
+    RedirectAttributes redirectModel, Model model) {
         redirectModel.addAttribute("login_challenge", login_challenge);
         redirectModel.addAttribute("username", username);
         redirectModel.addAttribute("rememberMe", rememberMe);
@@ -105,6 +122,7 @@ public class LoginController {
                 "DirectLogin username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
         );
         HttpEntity<String> entity = new HttpEntity<>(headers);
+
         try {
             ResponseEntity<DirectLoginResponse> tokenResponse = restTemplate.exchange(directLoginUrl, HttpMethod.POST, entity, DirectLoginResponse.class);
 
@@ -114,21 +132,35 @@ public class LoginController {
             // rememberMe for 1 hour.
             acceptLoginRequest.rememberFor(3600L);
             CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
-            session.setAttribute("directLoginToken", tokenResponse.getBody().getToken());
+            String directLoginToken = tokenResponse.getBody().getToken();
+            session.setAttribute("directLoginToken", directLoginToken);
+
+            {// validate consentId
+                String consentId = (String) session.getAttribute("consent_id");
+                HttpEntity<String> body = new HttpEntity<>(buildDirectLoginHeader(session));
+                restTemplate.exchange(getConsentUrl.replace("CONSENT_ID", consentId), HttpMethod.GET, body, Map.class);
+            }
+            {// validate bankId
+                String bankId = (String) session.getAttribute("bank_id");
+                HttpEntity<String> body = new HttpEntity<>(buildDirectLoginHeader(session));
+                restTemplate.exchange(getBankUrl.replace("BANK_ID", bankId), HttpMethod.GET, body, Map.class);
+            }
+
             return "redirect:" + response.getRedirectTo();
         } catch (HttpClientErrorException e) {
             String errorMsg = e.getMessage().replaceFirst(".*?(OBP-\\d+.*?)\".+", "$1");
-            redirectModel.addAttribute("errorMsg", errorMsg);
-            return "redirect:/login";
+            model.addAttribute("errorMsg", errorMsg + ". Please supply validate value!");
+            return "error";
         } catch (Exception e) {
-            redirectModel.addAttribute("errorMsg", "Unknown Error!");
+            model.addAttribute("errorMsg", "Unknown Error!");
             logger.error("Throw error when do direct login.", e);
-            return "redirect:/login";
+            return "error";
         }
 
     }
 
     private static final Pattern CONSENT_ID_PATTERN = Pattern.compile(".*?consent_id=([^&$]*).*");
+    private static final Pattern BANK_ID_PATTERN = Pattern.compile(".*?bank_id=([^&$]*).*");
 
     /**
      * get consent_id query parameter from auth request url
@@ -137,6 +169,19 @@ public class LoginController {
      */
     private String getConsentId(String authRequestUrl) {
         Matcher matcher = CONSENT_ID_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get bank_id query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getBankId(String authRequestUrl) {
+        Matcher matcher = BANK_ID_PATTERN.matcher(authRequestUrl);
         if(matcher.matches()) {
            return matcher.replaceFirst("$1");
         } else {
