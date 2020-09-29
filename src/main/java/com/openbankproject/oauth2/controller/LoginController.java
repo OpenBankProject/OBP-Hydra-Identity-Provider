@@ -1,6 +1,5 @@
 package com.openbankproject.oauth2.controller;
 
-import com.openbankproject.oauth2.model.Accounts;
 import com.openbankproject.oauth2.model.DirectLoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +24,10 @@ import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static com.openbankproject.oauth2.util.ControllerUtils.*;
 
 @Controller
 public class LoginController {
@@ -53,6 +52,8 @@ public class LoginController {
 
     @Resource
     private AdminApi hydraAdmin;
+    @Resource
+    private Function<String, Optional<String>> idVerifier;
 
     //show login page
     @GetMapping(value="/login", params = "login_challenge")
@@ -77,9 +78,22 @@ public class LoginController {
                          "with header Authorization: Authorization: Bearer <accessToken>");
                 return "error";
             }
-            // TODO validate consentId is valid
+            {// validate consentId
+                Optional<String> errorMsg = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
+                if(errorMsg.isPresent()) {
+                    model.addAttribute("errorMsg", errorMsg.get());
+                    return "error";
+                }
+            }
+            {// validate bankId
+                Optional<String> errorMsg = idVerifier.apply(getBankUrl.replace("BANK_ID", bankId));
+                if(errorMsg.isPresent()) {
+                    model.addAttribute("errorMsg", errorMsg.get());
+                    return "error";
+                }
+            }
+
             session.setAttribute("consent_id", consentId);
-            // TODO validate bankId is valid
             session.setAttribute("bank_id", bankId);
             // login before and checked rememberMe.
             if(loginRequest.getSkip()) {
@@ -135,21 +149,10 @@ public class LoginController {
             String directLoginToken = tokenResponse.getBody().getToken();
             session.setAttribute("directLoginToken", directLoginToken);
 
-            {// validate consentId
-                String consentId = (String) session.getAttribute("consent_id");
-                HttpEntity<String> body = new HttpEntity<>(buildDirectLoginHeader(session));
-                restTemplate.exchange(getConsentUrl.replace("CONSENT_ID", consentId), HttpMethod.GET, body, Map.class);
-            }
-            {// validate bankId
-                String bankId = (String) session.getAttribute("bank_id");
-                HttpEntity<String> body = new HttpEntity<>(buildDirectLoginHeader(session));
-                restTemplate.exchange(getBankUrl.replace("BANK_ID", bankId), HttpMethod.GET, body, Map.class);
-            }
-
             return "redirect:" + response.getRedirectTo();
         } catch (HttpClientErrorException e) {
             String errorMsg = e.getMessage().replaceFirst(".*?(OBP-\\d+.*?)\".+", "$1");
-            model.addAttribute("errorMsg", errorMsg + ". Please supply validate value!");
+            model.addAttribute("errorMsg", errorMsg);
             return "error";
         } catch (Exception e) {
             model.addAttribute("errorMsg", "Unknown Error!");

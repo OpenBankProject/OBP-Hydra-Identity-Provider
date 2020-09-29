@@ -66,6 +66,9 @@ obp.base_url=http://localhost:8080
 # hydra server admin urls
 oauth2.admin_url=http://127.0.0.1:4445
 
+# when verify consentId and bankId, need an authenticated user, it can be any available user
+identity_provider.user.username=Cliente_uno
+identity_provider.user.password=publicuserslongpass
 # set consumer_key that generate in 1 step
 consumer_key=yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy
 ```
