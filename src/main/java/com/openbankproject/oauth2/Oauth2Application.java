@@ -18,8 +18,6 @@ import sh.ory.hydra.api.AdminApi;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
@@ -60,13 +58,12 @@ public class Oauth2Application {
     }
 
     /**
-     * validate id function, (String url)-> Option[String].
-     * url -> error message
+     * validate id function, (String url)-> Response json.
      * @param restTemplate
      * @return function
      */
     @Bean
-    public Function<String, Optional<String>> idVerifier(RestTemplate restTemplate) {
+    public Function<String, Map<String, Object>> idVerifier(RestTemplate restTemplate) {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization",
                 "DirectLogin username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
@@ -80,11 +77,10 @@ public class Oauth2Application {
 
         return (String url) -> {
             try{
-                restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class);
-                return Optional.empty();
+                return restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class).getBody();
             } catch (HttpClientErrorException e) {
                 String errorMsg = e.getMessage().replaceFirst(".*?(OBP-\\d+.*?)\".+", "$1");
-                return Optional.of(errorMsg);
+                throw new RuntimeException(errorMsg, e);
             }
         };
     }

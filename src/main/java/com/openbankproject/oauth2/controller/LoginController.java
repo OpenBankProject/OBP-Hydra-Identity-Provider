@@ -24,7 +24,7 @@ import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
-import java.util.Optional;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,7 +53,7 @@ public class LoginController {
     @Resource
     private AdminApi hydraAdmin;
     @Resource
-    private Function<String, Optional<String>> idVerifier;
+    private Function<String, Map<String, Object>> idVerifier;
 
     //show login page
     @GetMapping(value="/login", params = "login_challenge")
@@ -78,20 +78,29 @@ public class LoginController {
                          "with header Authorization: Authorization: Bearer <accessToken>");
                 return "error";
             }
-            {// validate consentId
-                Optional<String> errorMsg = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
-                if(errorMsg.isPresent()) {
-                    model.addAttribute("errorMsg", errorMsg.get());
-                    return "error";
+            try {
+                {// validate consentId
+                    Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
+                    Map<String, Object> data = ((Map<String, Object>) responseBody.get("Data"));
+                    if(data == null || data.isEmpty()) {
+                        model.addAttribute("errorMsg", "Consent content have no required Data field");
+                        return "error";
+                    }
+
+                    String status = ((String) data.get("Status"));
+                    if(!"AWAITINGAUTHORISATION".equals(status)) {
+                        model.addAttribute("errorMsg", "The Consent status should be AWAITINGAUTHORISATION, but current status is " + status);
+                        return "error";
+                    }
                 }
-            }
-            {// validate bankId
-                Optional<String> errorMsg = idVerifier.apply(getBankUrl.replace("BANK_ID", bankId));
-                if(errorMsg.isPresent()) {
-                    model.addAttribute("errorMsg", errorMsg.get());
-                    return "error";
+                {// validate bankId
+                    idVerifier.apply(getBankUrl.replace("BANK_ID", bankId));
                 }
+            } catch (Exception e) {
+                model.addAttribute("errorMsg", e.getMessage());
+                return "error";
             }
+
 
             session.setAttribute("consent_id", consentId);
             session.setAttribute("bank_id", bankId);
