@@ -63,9 +63,8 @@ spring.thymeleaf.servlet.content-type=text/html;
 # obp-api server url
 obp.base_url=http://localhost:8080
 
-# hydra server urls
+# hydra server admin urls
 oauth2.admin_url=http://127.0.0.1:4445
-oauth2.public_url=http://127.0.0.1:4444
 
 # set consumer_key that generate in 1 step
 consumer_key=yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy
@@ -88,8 +87,7 @@ crate file `application.properties`, and the content as follows:
 server.port=8081
 
 logging.level.com.openbankproject=DEBUG
-# hydra server urls
-oauth2.admin_url=http://127.0.0.1:4445
+# hydra server public urls
 oauth2.public_url=http://127.0.0.1:4444
 # obp-api server url
 obp.base_url=http://localhost:8080
