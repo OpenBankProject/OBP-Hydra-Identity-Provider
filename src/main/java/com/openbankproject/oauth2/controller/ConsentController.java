@@ -27,6 +27,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
 
@@ -37,6 +38,8 @@ public class ConsentController {
     private String obpBaseUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/account-access")
     private String resetAccessViewUrl;
+    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
+    private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsUrl;
 
@@ -73,6 +76,10 @@ public class ConsentController {
                 model.addAttribute("client_url",clientUrl);
             }
         }
+        String[] consents = consentRequest.getRequestedScope().stream()
+                .filter(it -> !it.equals("openid") && !it.equals("offline"))
+                .toArray(String[]::new);
+        model.addAttribute("consents", consents);
 
         return "accounts";
     }
@@ -112,6 +119,22 @@ public class ConsentController {
             for (String accountId : notSelectAccountIds) {
                 String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
                 restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
+            }
+        }
+        { // update Consents status to AUTHORISED
+            Map<String, String> body = new HashMap<>();
+            body.put("status", "AUTHORISED");
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+            String consentId = (String) session.getAttribute("consent_id");
+            String url = updateConsentStatusUrl.replace("CONSENT_ID", consentId).replace("BANK_ID", bankId);
+
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.PUT, entity, Map.class);
+            if(response.getStatusCodeValue() == 200) {
+                // do nothing
+            } else if(response.getStatusCodeValue() == 202) {
+                // TODO do SCA challenge
+            } else {
+                // TODO impossible error.
             }
         }
         Boolean rememberMe = (Boolean) session.getAttribute("rememberMe");
