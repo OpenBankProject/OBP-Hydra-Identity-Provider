@@ -71,6 +71,15 @@ identity_provider.user.username=Cliente_uno
 identity_provider.user.password=publicuserslongpass
 # set consumer_key that generate in 1 step
 consumer_key=yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy
+
+# MTLS related, config keystore and truststore
+## keystore and truststore files can be local files or web resources, as example:
+mtls.keyStore.path=file:///Users/<some path>/cert/user.jks
+#mtls.keyStore.path=http://<some domain>/user.jks
+mtls.keyStore.password=<keystore password>
+mtls.trustStore.path=file:///Users/<some path>/cert/ofpilot.jks
+#mtls.trustStore.path=http://<some domain>/ofpilot.jks
+mtls.trustStore.password=<truststore password>
 ```
 make the application.properties file in the same folder with hydra-identity-provider-xxx.jar
 
@@ -94,6 +103,15 @@ logging.level.com.openbankproject=DEBUG
 oauth2.public_url=http://127.0.0.1:4444
 # obp-api server url
 obp.base_url=http://localhost:8080
+
+# MTLS related, config keystore and truststore
+## keystore and truststore files can be local files or web resources, as example:
+mtls.keyStore.path=file:///Users/<some path>/cert/user.jks
+#mtls.keyStore.path=http://<some domain>/user.jks
+mtls.keyStore.password=<keystore password>
+mtls.trustStore.path=file:///Users/<some path>/cert/ofpilot.jks
+#mtls.trustStore.path=http://<some domain>/ofpilot.jks
+mtls.trustStore.password=<truststore password>
 
 # create one consumer, and copy OAuth2 information past here:
 oauth2.client_id=z3xh2jrf4y2t3h0th0jbs0fs54zg1wqffoupexwy

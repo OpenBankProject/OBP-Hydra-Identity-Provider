@@ -1,22 +1,19 @@
 package com.openbankproject.oauth2;
 
 import com.openbankproject.oauth2.model.DirectLoginResponse;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
-import org.springframework.http.client.ClientHttpRequestExecution;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiClient;
 import sh.ory.hydra.Configuration;
 import sh.ory.hydra.api.AdminApi;
 
-import java.io.IOException;
-import java.time.Duration;
+import javax.net.ssl.SSLContext;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -41,20 +38,15 @@ public class Oauth2Application {
     }
 
     @Bean
-    public AdminApi hydraAdmin() {
+    public AdminApi hydraAdmin(SSLContext sslContext) {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath(hydraAdminUrl);
+
+        // config MTLS for hydra client
+        final OkHttpClient httpClient = defaultClient.getHttpClient();
+        final OkHttpClient okHttpClient = httpClient.newBuilder().sslSocketFactory(sslContext.getSocketFactory()).build();
+        defaultClient.setHttpClient(okHttpClient);
         return new AdminApi(defaultClient);
-    }
-
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-
-        return builder
-                .setConnectTimeout(Duration.ofSeconds(60))
-                .setReadTimeout(Duration.ofSeconds(30))
-                .interceptors(this::headerIntercept)
-                .build();
     }
 
     /**
@@ -83,13 +75,5 @@ public class Oauth2Application {
                 throw new RuntimeException(errorMsg, e);
             }
         };
-    }
-
-    private ClientHttpResponse headerIntercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-        HttpHeaders headers = request.getHeaders();
-        if(headers.getContentType() == null) {
-            headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        }
-        return execution.execute(request, body);
     }
 }
