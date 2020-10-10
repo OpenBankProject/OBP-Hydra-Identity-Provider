@@ -14,6 +14,8 @@ import sh.ory.hydra.Configuration;
 import sh.ory.hydra.api.AdminApi;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -38,13 +40,15 @@ public class Oauth2Application {
     }
 
     @Bean
-    public AdminApi hydraAdmin(SSLContext sslContext) {
+    public AdminApi hydraAdmin(SSLContext sslContext, TrustManager[] trustManagers) {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath(hydraAdminUrl);
 
         // config MTLS for hydra client
         final OkHttpClient httpClient = defaultClient.getHttpClient();
-        final OkHttpClient okHttpClient = httpClient.newBuilder().sslSocketFactory(sslContext.getSocketFactory()).build();
+        final OkHttpClient okHttpClient = httpClient.newBuilder()
+                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
+                .build();
         defaultClient.setHttpClient(okHttpClient);
         return new AdminApi(defaultClient);
     }
