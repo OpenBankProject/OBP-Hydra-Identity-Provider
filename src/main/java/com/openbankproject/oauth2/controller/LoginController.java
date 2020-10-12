@@ -39,7 +39,7 @@ public class LoginController {
     @Value("${obp.base_url}/my/logins/direct")
     private String directLoginUrl;
 
-    @Value("${obp.base_url}/mx-open-finance/v0.0.1/account-access-consents/CONSENT_ID")
+    @Value("${endpoint.path.prefix}/account-access-consents/CONSENT_ID")
     private String getConsentUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID")
     private String getBankUrl;
@@ -72,9 +72,12 @@ public class LoginController {
                 return "error";
             }
             if(consentId  == null) {
+                final String createConsentUrl = getConsentUrl.replace("/CONSENT_ID", "");
                 model.addAttribute(
                         "errorMsg", "Query parameter `consent_id` is mandatory! " +
-                        "Hint: create client_credentials accessToken, create Account Access Consents by call endpoint `CreateAccountAccessConsents` (/mx-open-finance/v0.0.1/account-access-consents), " +
+                        "Hint: create client_credentials accessToken, create Account Access Consents by call endpoint `CreateAccountAccessConsents` (" +
+                         createConsentUrl +
+                         "), " +
                          "with header Authorization: Authorization: Bearer <accessToken>");
                 return "error";
             }

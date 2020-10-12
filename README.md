@@ -63,6 +63,9 @@ spring.thymeleaf.servlet.content-type=text/html;
 # obp-api server url
 obp.base_url=http://localhost:8080
 
+## obp endpoint path prefix
+endpoint.path.prefix=${obp.base_url}/mx-open-finance/v0.0.1
+
 # hydra server admin urls
 oauth2.admin_url=http://127.0.0.1:4445
 
@@ -103,6 +106,9 @@ logging.level.com.openbankproject=DEBUG
 oauth2.public_url=http://127.0.0.1:4444
 # obp-api server url
 obp.base_url=http://localhost:8080
+
+## obp endpoint path prefix
+endpoint.path.prefix=${obp.base_url}/mx-open-finance/v0.0.1
 
 # MTLS related, config keystore and truststore
 ## keystore and truststore files can be local files or web resources, as example:
