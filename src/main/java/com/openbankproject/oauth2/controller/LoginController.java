@@ -104,11 +104,11 @@ public class LoginController {
                 return "error";
             }
 
-
             session.setAttribute("consent_id", consentId);
             session.setAttribute("bank_id", bankId);
+
             // login before and checked rememberMe.
-            if(loginRequest.getSkip()) {
+            if(loginRequest.getSkip() && session.getAttribute("directLoginToken") != null) {
                 AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
                 acceptLoginRequest.setSubject(loginRequest.getSubject());
                 CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
