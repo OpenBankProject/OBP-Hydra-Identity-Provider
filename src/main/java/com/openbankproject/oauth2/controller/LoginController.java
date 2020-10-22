@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -67,6 +69,7 @@ public class LoginController {
             String requestUrl = loginRequest.getRequestUrl();
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
+            final List<String> acrValues = loginRequest.getOidcContext().getAcrValues();
             if(bankId == null) {
                 model.addAttribute("errorMsg", "Query parameter `bank_id` is mandatory! ");
                 return "error";
@@ -79,6 +82,11 @@ public class LoginController {
                          createConsentUrl +
                          "), " +
                          "with header Authorization: Authorization: Bearer <accessToken>");
+                return "error";
+            }
+            // TODO acr value should do more validation
+            if(CollectionUtils.isEmpty(acrValues)) {
+                model.addAttribute("errorMsg", "Query parameter `acr_values` is mandatory! ");
                 return "error";
             }
             try {
@@ -106,6 +114,7 @@ public class LoginController {
 
             session.setAttribute("consent_id", consentId);
             session.setAttribute("bank_id", bankId);
+            session.setAttribute("acr_values", acrValues);
 
             // login before and checked rememberMe.
             if(loginRequest.getSkip() && session.getAttribute("directLoginToken") != null) {
@@ -155,6 +164,9 @@ public class LoginController {
             AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
             acceptLoginRequest.setSubject(username);
             acceptLoginRequest.remember(rememberMe);
+
+            List<String> acrValues = (List<String>) session.getAttribute("acr_values");
+            acceptLoginRequest.setAcr(acrValues.get(0));
             // rememberMe for 1 hour.
             acceptLoginRequest.rememberFor(3600L);
             CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
