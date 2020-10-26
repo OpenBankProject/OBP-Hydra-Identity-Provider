@@ -1,5 +1,6 @@
 package com.openbankproject.oauth2.controller;
 
+import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.Accounts;
 import org.apache.commons.lang3.ArrayUtils;
@@ -18,10 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
-import sh.ory.hydra.model.AcceptConsentRequest;
-import sh.ory.hydra.model.CompletedRequest;
-import sh.ory.hydra.model.ConsentRequest;
-import sh.ory.hydra.model.ConsentRequestSession;
+import sh.ory.hydra.model.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
@@ -146,8 +144,17 @@ public class ConsentController {
         AcceptConsentRequest acceptConsentRequest = new AcceptConsentRequest();
         acceptConsentRequest.setGrantScope(requestedScope);
         acceptConsentRequest.setGrantAccessTokenAudience(consentRequest.getRequestedAccessTokenAudience());
-        ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username);
+
+        final OAuth2Client client = consentRequest.getClient();
+        final Map<String, String> metadata = ((Map<String, String>) client.getMetadata());
+        String x5tS256 = null;
+        if(metadata != null && metadata.get("client_certificate") != null) {
+             x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(metadata.get("client_certificate"))).toString();
+        }
+
+        ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username, x5tS256);
         acceptConsentRequest.setSession(hydraSession);
+
         // login before and checked rememberMe.
         if(!consentRequest.getSkip()) {
             acceptConsentRequest.setRemember(rememberMe);
@@ -164,20 +171,29 @@ public class ConsentController {
         return "redirect:" + acceptConsentResponse.getRedirectTo();
     }
 
-    private ConsentRequestSession buildConsentRequestSession(String consentId, String username) {
+    private ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256) {
         ConsentRequestSession hydraSession = new ConsentRequestSession();
+
+        Map<String, String> x5tS256Map = new HashMap<>();
+        x5tS256Map.put("x5t#S256", x5tS256);
 
         { // prepare id_token content
             HashMap<String, Object> idTokenValues = new HashMap<>();
             idTokenValues.put("given_name", username);
             idTokenValues.put("family_name", username);
             idTokenValues.put("name", username);
+            if(x5tS256 != null) {
+                idTokenValues.put("cnf", x5tS256Map);
+            }
 
             hydraSession.setIdToken(idTokenValues);
         }
         { // prepare access_token content
             HashMap<String, Object> accessToken = new HashMap<>();
             accessToken.put("consent_id", consentId);
+            if(x5tS256 != null) {
+                accessToken.put("cnf", x5tS256Map);
+            }
 
             hydraSession.accessToken(accessToken);
         }

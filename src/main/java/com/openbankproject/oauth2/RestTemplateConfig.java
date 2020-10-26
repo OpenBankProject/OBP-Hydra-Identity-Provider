@@ -50,7 +50,7 @@ public class RestTemplateConfig {
     @Bean
     public SSLContext sslContext(TrustManager[] trustManagers) throws IOException, GeneralSecurityException {
         final KeyManager[] keyManagers = getKeyManagers();
-        final SSLContext sslContext = SSLContext.getInstance("SSL");
+        final SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
         return sslContext;
     }
