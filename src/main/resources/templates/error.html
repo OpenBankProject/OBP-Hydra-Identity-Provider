@@ -27,7 +27,7 @@
             <div class="alert alert-danger alert-dismissible col-md-12" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <strong>Warning!</strong>
-                <span id="warning_msg" th:text="${errorMsg}">He show some error message.</span>
+                <span id="warning_msg" th:utext="${errorMsg}">He show some error message.</span>
             </div>
         </div>
     </div>

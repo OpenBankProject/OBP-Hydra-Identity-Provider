@@ -85,8 +85,14 @@ public class LoginController {
                 return "error";
             }
             // TODO acr value should do more validation
-            if(CollectionUtils.isEmpty(acrValues)) {
-                model.addAttribute("errorMsg", "Query parameter `acr_values` is mandatory! ");
+//            if(CollectionUtils.isEmpty(acrValues)) {
+//                model.addAttribute("errorMsg", "Query parameter `acr_values` is mandatory! ");
+//                return "error";
+//            }
+            if(!requestUrl.contains("request") && !requestUrl.contains("request_uri")) {
+                model.addAttribute(
+                        "errorMsg", "Query parameter `request` and `request_uri` at least one must be supplied! " +
+                                "Hint: please reference <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#JWTRequests\">Passing Request Parameters as JWTs</a>");
                 return "error";
             }
             try {
@@ -166,7 +172,10 @@ public class LoginController {
             acceptLoginRequest.remember(rememberMe);
 
             List<String> acrValues = (List<String>) session.getAttribute("acr_values");
-            acceptLoginRequest.setAcr(acrValues.get(0));
+            if(!CollectionUtils.isEmpty(acrValues)) {
+                acceptLoginRequest.setAcr(acrValues.get(0));
+            }
+
             // rememberMe for 1 hour.
             acceptLoginRequest.rememberFor(3600L);
             CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
