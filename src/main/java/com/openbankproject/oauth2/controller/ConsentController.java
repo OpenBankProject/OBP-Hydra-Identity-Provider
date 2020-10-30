@@ -21,11 +21,15 @@ import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.model.*;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
 
@@ -40,11 +44,32 @@ public class ConsentController {
     private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsUrl;
+    @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
+    private String keySetUrl;
 
     @Resource
     private RestTemplate restTemplate;
     @Resource
     private AdminApi adminApi;
+
+    private String idTokenSignHashAlg;
+
+    @PostConstruct
+    private void initiate() {
+        final Map<String, List<Map<String, String>>> keySet = restTemplate.getForObject(keySetUrl, Map.class);
+
+        final Optional<String> firstAlg = keySet.get("keys").stream()
+                .filter(it -> "sig".equals(it.get("use")))
+                .map(it -> it.get("alg"))
+                .findFirst();
+        if(firstAlg.isPresent()) {
+            String idTokenSignAlg = firstAlg.get();
+            // this rule: RS256 -> SHA-256
+            idTokenSignHashAlg = idTokenSignAlg.replaceFirst(".*?(\\d+)$", "SHA-$1");
+        } else {
+            throw new IllegalStateException("Cant find id token sign jwk from " +  this.keySetUrl);
+        }
+    }
 
     //redirect by hydra to consent process
     @GetMapping(value="/consent", params = "consent_challenge")
@@ -82,7 +107,7 @@ public class ConsentController {
         return "accounts";
     }
     @PostMapping(value="/reset_access_to_views", params = "consent_challenge")
-    public String resetAccessToViews(@RequestParam String consent_challenge, @RequestParam("accounts") String[] accountIs, HttpSession session, Model model) {
+    public String resetAccessToViews(@RequestParam String consent_challenge, @RequestParam("accounts") String[] accountIs, HttpSession session, Model model) throws NoSuchAlgorithmException {
         String bankId = (String) session.getAttribute("bank_id");
 
         ConsentRequest consentRequest;
@@ -152,7 +177,9 @@ public class ConsentController {
              x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(metadata.get("client_certificate"))).toString();
         }
 
-        ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username, x5tS256);
+        final String state = getState(consentRequest.getRequestUrl());
+        final String sHash = buildHash(state);
+        ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username, x5tS256, sHash);
         acceptConsentRequest.setSession(hydraSession);
 
         // login before and checked rememberMe.
@@ -171,7 +198,7 @@ public class ConsentController {
         return "redirect:" + acceptConsentResponse.getRedirectTo();
     }
 
-    private ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256) {
+    private ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256, String sHash) {
         ConsentRequestSession hydraSession = new ConsentRequestSession();
 
         Map<String, String> x5tS256Map = new HashMap<>();
@@ -182,6 +209,7 @@ public class ConsentController {
             idTokenValues.put("given_name", username);
             idTokenValues.put("family_name", username);
             idTokenValues.put("name", username);
+            idTokenValues.put("s_hash", sHash);
             if(x5tS256 != null) {
                 idTokenValues.put("cnf", x5tS256Map);
             }
@@ -198,5 +226,36 @@ public class ConsentController {
             hydraSession.accessToken(accessToken);
         }
         return hydraSession;
+    }
+
+    private static final Pattern STATE_PATTERN = Pattern.compile(".*?state=([^&$]*).*");
+    /**
+     * get bank_id query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getState(String authRequestUrl) {
+        Matcher matcher = STATE_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+            return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * calculate the c_hash, at_hash, s_hash, the logic as follow:
+     * 1. Using the hash algorithm specified in the alg claim in the ID Token header
+     * 2. hash the octets of the ASCII representation of the code
+     * 3. Base64url-encode the left-most half of the hash.
+     *
+     * @param str to calculate hash value
+     * @return hash value
+     */
+    private String buildHash(String str) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance(idTokenSignHashAlg);
+        byte[] asciiValue = str.getBytes(StandardCharsets.US_ASCII);
+        byte[] encodedHash = md.digest(asciiValue);
+        byte[] halfOfEncodedHash = Arrays.copyOf(encodedHash, (encodedHash.length / 2));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(halfOfEncodedHash);
     }
 }
