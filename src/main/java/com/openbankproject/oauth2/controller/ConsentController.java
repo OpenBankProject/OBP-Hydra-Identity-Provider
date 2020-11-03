@@ -36,8 +36,7 @@ import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHe
 @Controller
 public class ConsentController {
     private static Logger logger = LoggerFactory.getLogger(ConsentController.class);
-    @Value("${obp.base_url}")
-    private String obpBaseUrl;
+
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts/ACCOUNT_ID/account-access")
     private String resetAccessViewUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
@@ -74,7 +73,6 @@ public class ConsentController {
     //redirect by hydra to consent process
     @GetMapping(value="/consent", params = "consent_challenge")
     public String consentFromHydra(@RequestParam String consent_challenge, HttpSession session, Model model)  {
-        model.addAttribute("obp_url", obpBaseUrl);
         model.addAttribute("consent_challenge", consent_challenge);
         ConsentRequest consentRequest;
         try { // validate consent_challenge

@@ -17,9 +17,6 @@ import javax.annotation.Resource;
 public class LogoutController {
     private static Logger logger = LoggerFactory.getLogger(LogoutController.class);
 
-    @Value("${obp.base_url}")
-    private String obpBaseUrl;
-
     @Resource
     private AdminApi hydraAdmin;
 
@@ -31,7 +28,6 @@ public class LogoutController {
             CompletedRequest completedRequest = hydraAdmin.acceptLogoutRequest(logout_challenge);
             return "redirect:" + completedRequest.getRedirectTo();
         } catch (ApiException e) {
-            model.addAttribute("obp_url", obpBaseUrl);
             logger.error("Logout fail, logout_challenge="+logout_challenge, e);
             model.addAttribute("errorMsg", "Parameter logout_challenge is not correct, hint: You can't go to this page directly, must redirect from hydra.");
             return "error";

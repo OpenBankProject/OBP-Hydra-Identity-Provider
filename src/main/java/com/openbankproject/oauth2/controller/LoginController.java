@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
@@ -24,6 +25,7 @@ import sh.ory.hydra.model.CompletedRequest;
 import sh.ory.hydra.model.LoginRequest;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Controller
-public class LoginController {
+public class LoginController implements ServletContextAware {
     private static Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     @Value("${obp.base_url}")
@@ -57,11 +59,19 @@ public class LoginController {
     @Resource
     private Function<String, Map<String, Object>> idVerifier;
 
+    /**
+     * initiate global variable
+     * @param servletContext
+     */
+    @Override
+    public void setServletContext(ServletContext servletContext) {
+        servletContext.setAttribute("obp_url", obpBaseUrl);
+    }
+
     //show login page
     @GetMapping(value="/login", params = "login_challenge")
     public String loginFromHydra(@RequestParam String login_challenge,
                                  Model model, HttpSession session){
-        model.addAttribute("obp_url", obpBaseUrl);
         model.addAttribute("login_challenge", login_challenge);
 
         try {
