@@ -4,6 +4,7 @@ import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.Accounts;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,7 +106,21 @@ public class ConsentController {
         return "accounts";
     }
     @PostMapping(value="/reset_access_to_views", params = "consent_challenge")
-    public String resetAccessToViews(@RequestParam String consent_challenge, @RequestParam("accounts") String[] accountIs, HttpSession session, Model model) throws NoSuchAlgorithmException {
+    public String resetAccessToViews(@RequestParam String consent_challenge,
+                                     @RequestParam(value="accounts", required = false) String[] accountIs,
+                                     @RequestParam(value="deny",required = false) String deny,
+                                     HttpSession session, Model model) throws NoSuchAlgorithmException, ApiException {
+        if(StringUtils.isNotBlank(deny)) {
+            final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
+            final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
+            return "redirect:" + completedRequest.getRedirectTo();
+        }
+
+        if(ArrayUtils.isEmpty(accountIs)) {
+            model.addAttribute("errorMsg", "accounts field is mandatory!");
+            return "error";
+        }
+
         String bankId = (String) session.getAttribute("bank_id");
 
         ConsentRequest consentRequest;
