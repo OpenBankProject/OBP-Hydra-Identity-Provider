@@ -99,12 +99,14 @@ public class LoginController implements ServletContextAware {
 //                model.addAttribute("errorMsg", "Query parameter `acr_values` is mandatory! ");
 //                return "error";
 //            }
-            if(!requestUrl.contains("request") && !requestUrl.contains("request_uri")) {
-                model.addAttribute(
-                        "errorMsg", "Query parameter `request` and `request_uri` at least one must be supplied! " +
-                                "Hint: please reference <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#JWTRequests\">Passing Request Parameters as JWTs</a>");
-                return "error";
-            }
+            // TODO in order make old consumer works, the request and request_uri are optional.
+//            if(!requestUrl.contains("request") && !requestUrl.contains("request_uri")) {
+//                model.addAttribute(
+//                        "errorMsg", "Query parameter `request` and `request_uri` at least one must be supplied! " +
+//                                "Hint: please reference <a href=\"https://openid.net/specs/openid-connect-core-1_0.html#JWTRequests\">Passing Request Parameters as JWTs</a>");
+//                return "error";
+//            }
+
             try {
                 {// validate consentId
                     Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
