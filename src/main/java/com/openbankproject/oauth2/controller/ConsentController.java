@@ -137,18 +137,20 @@ public class ConsentController {
                 .filter(it -> !it.equals("openid") && !it.equals("offline"))
                 .toArray(String[]::new);
         HttpHeaders headers = buildDirectLoginHeader(session);
+        String[] allAccountIds = (String[]) session.getAttribute("all_account_ids");
 
         { // process selected accounts
             AccessToViewRequest body = new AccessToViewRequest(selectedObpScopes);
             HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
+
             for (String accountId : accountIs) {
+                if(!ArrayUtils.contains(allAccountIds, accountId)) continue;
                 String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
                 restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
             }
         }
 
         { // process not selected accounts
-            String[] allAccountIds = (String[]) session.getAttribute("all_account_ids");
             String[] notSelectAccountIds = ArrayUtils.removeElements(allAccountIds, accountIs);
             AccessToViewRequest body = new AccessToViewRequest(ArrayUtils.EMPTY_STRING_ARRAY);
             HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);

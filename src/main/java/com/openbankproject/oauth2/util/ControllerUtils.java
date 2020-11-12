@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpSession;
 
+
 public interface ControllerUtils {
 
    static HttpHeaders buildDirectLoginHeader(HttpSession session) {
