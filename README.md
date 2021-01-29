@@ -17,6 +17,8 @@ docker-compose -f quickstart.yml \
     -f quickstart-tracing.yml \
     up --build
 ```
+Try to get response from this public url http://127.0.0.1:4444/.well-known/openid-configuration in order to confirm that hydra server is up and running.
+
 The hydra server corresponding url example:
 ```
 oauth2.admin_url=http://127.0.0.1:4445
@@ -96,7 +98,7 @@ execute command: `mvn clean package`
 
 generate jar file in target folder: obp-hydra-auth2-xxx.jar
 
-crate file `application.properties`, and the content as follows:
+create file `application.properties`, and the content as follows:
 ```
 # server port number
 server.port=8081
