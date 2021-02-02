@@ -17,7 +17,10 @@ docker-compose -f quickstart.yml \
     -f quickstart-tracing.yml \
     up --build
 ```
-Try to get response from this public url http://127.0.0.1:4444/.well-known/openid-configuration in order to confirm that hydra server is up and running.
+In order to Check Readiness Status please use next ublic api: http://127.0.0.1:4444/health/ready
+You can try and some other public apis:
+- [OpenID Connect Discovery](http://127.0.0.1:4444/.well-known/openid-configuration)
+- [JSON Web Keys Discovery](http://127.0.0.1:4444/.well-known/jwks.json)
 
 The hydra server corresponding url example:
 ```
