@@ -17,7 +17,8 @@ docker-compose -f quickstart.yml \
     -f quickstart-tracing.yml \
     up --build
 ```
-In order to Check Readiness Status please use next ublic api: http://127.0.0.1:4444/health/ready
+In order to Check Readiness Status please use next public api: http://127.0.0.1:4444/health/ready
+
 You can try and some other public apis:
 - [OpenID Connect Discovery](http://127.0.0.1:4444/.well-known/openid-configuration)
 - [JSON Web Keys Discovery](http://127.0.0.1:4444/.well-known/jwks.json)
