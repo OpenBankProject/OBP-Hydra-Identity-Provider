@@ -27,8 +27,8 @@ oauth2.public_url=http://127.0.0.1:4444
 ### 2. Deploy obp-api server:
 The props should contain the follow settings:
 ```
-## if login_with_hydra set to true, all other props must not be empty
-login_with_hydra=true
+## if integrate_with_hydra set to true, all other props must not be empty
+integrate_with_hydra=true
 # hydra server urls
 hydra_public_url=http://127.0.0.1:4444
 hydra_admin_url=http://127.0.0.1:4445
