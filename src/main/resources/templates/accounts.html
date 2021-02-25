@@ -62,7 +62,7 @@
 
                     <div class="btn-toolbar">
                         <button type="button" class="btn btn-default" id="deny_btn">Deny access</button>
-                        <button type="submit" class="btn btn-default" name="submit" value="Confirm">Confirm</button>
+                        <button type="submit" class="btn btn-default" disabled="disabled" name="submit" value="Confirm">Confirm</button>
                     </div>
                 </form>
 
@@ -104,6 +104,8 @@
                 $("#error_msg").removeClass("hidden");
                 $(":submit").prop('disabled', 'disabled');
             }
+
+            $('form [type=submit]').prop('disabled', false);
         });
 
     </script>
