@@ -3,6 +3,7 @@ package com.openbankproject.oauth2.controller;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.Accounts;
+import com.openbankproject.oauth2.model.PostConsentJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -44,6 +45,8 @@ public class ConsentController {
     private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsUrl;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents")
+    private String createBerlinGroupConsentsUrl;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
     private String keySetUrl;
 
@@ -86,16 +89,25 @@ public class ConsentController {
 
         { // prepare account list
             String bankId = (String) session.getAttribute("bank_id");
+            String apiStandard = (String) session.getAttribute("api_standard");
             HttpHeaders headers = buildDirectLoginHeader(session);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
-            model.addAttribute("accounts", accounts.getBody().getAccounts());
-
-            session.setAttribute("all_account_ids", accounts.getBody().accountIds());
-
-            if(ArrayUtils.isEmpty(accounts.getBody().getAccounts())) {
-                String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
-                model.addAttribute("client_url",clientUrl);
+            if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
+                model.addAttribute("accounts", accounts.getBody().getIbanAccounts());
+                session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
+                session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
+                if(ArrayUtils.isEmpty(accounts.getBody().getIbanAccounts())) {
+                    String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
+                    model.addAttribute("client_url",clientUrl);
+                }
+            } else {
+                model.addAttribute("accounts", accounts.getBody().getAccounts());
+                session.setAttribute("all_account_ids", accounts.getBody().accountIds());
+                if(ArrayUtils.isEmpty(accounts.getBody().getAccounts())) {
+                    String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
+                    model.addAttribute("client_url",clientUrl);
+                }
             }
         }
         String[] consents = consentRequest.getRequestedScope().stream()
@@ -122,6 +134,7 @@ public class ConsentController {
         }
 
         String bankId = (String) session.getAttribute("bank_id");
+        String apiStandard = (String) session.getAttribute("api_standard");
 
         ConsentRequest consentRequest;
         try {
@@ -159,9 +172,33 @@ public class ConsentController {
                 restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
             }
         }
-        { // update Consents status to AUTHORISED
+        
+        // Create Berlin Group Consent
+        if(apiStandard.equalsIgnoreCase("BerlinGroup")){ 
+            String recurringIndicator = (String) session.getAttribute("recurring_indicator");
+            String expirationDateTime = (String) session.getAttribute("expiration_time");
+            String frequencyPerDay = (String) session.getAttribute("frequency_per_day");
+            String[] allIbans  = (String[]) session.getAttribute("all_account_ibans");
+            PostConsentJson body = new PostConsentJson(
+                    selectedObpScopes,
+                    allIbans,
+                    recurringIndicator.equalsIgnoreCase("true"),
+                    expirationDateTime,
+                    Integer.parseInt(frequencyPerDay),
+                    false
+            );
+            HttpEntity<PostConsentJson> request = new HttpEntity<>(body, headers);
+            Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
+            String consentId = ((Map<String, String>) response).get("consentId");
+            session.setAttribute("consent_id", consentId);
+        }
+        { // update Consents status to AUTHORISED/ACCEPTED
             Map<String, String> body = new HashMap<>();
-            body.put("status", "AUTHORISED");
+            if(apiStandard.equalsIgnoreCase("BerlinGroup")){
+                body.put("status", "ACCEPTED");
+            } else {
+                body.put("status", "AUTHORISED");
+            }
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
             String consentId = (String) session.getAttribute("consent_id");
             String url = updateConsentStatusUrl.replace("CONSENT_ID", consentId).replace("BANK_ID", bankId);
@@ -224,6 +261,7 @@ public class ConsentController {
             idTokenValues.put("given_name", username);
             idTokenValues.put("family_name", username);
             idTokenValues.put("name", username);
+            idTokenValues.put("consent_id", consentId);
             idTokenValues.put("s_hash", sHash);
             if(x5tS256 != null) {
                 idTokenValues.put("cnf", x5tS256Map);

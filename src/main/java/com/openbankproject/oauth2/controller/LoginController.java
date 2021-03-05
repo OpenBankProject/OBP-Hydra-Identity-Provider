@@ -79,6 +79,10 @@ public class LoginController implements ServletContextAware {
             String requestUrl = loginRequest.getRequestUrl();
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
+            String recurringIndicator = getRecurringIndicator(requestUrl);
+            String frequencyPerDay = getFrequencyPerDay(requestUrl);
+            String expirationTime = getExpirationTime(requestUrl);
+            String apiStandard = getApiStandard(requestUrl);
             final List<String> acrValues = loginRequest.getOidcContext().getAcrValues();
             if(bankId == null) {
                 model.addAttribute("errorMsg", "Query parameter `bank_id` is mandatory! ");
@@ -108,6 +112,7 @@ public class LoginController implements ServletContextAware {
 //            }
 
             try {
+                if(!apiStandard.equalsIgnoreCase("BerlinGroup"))
                 {// validate consentId
                     Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
                     Map<String, Object> data = ((Map<String, Object>) responseBody.get("Data"));
@@ -132,6 +137,10 @@ public class LoginController implements ServletContextAware {
 
             session.setAttribute("consent_id", consentId);
             session.setAttribute("bank_id", bankId);
+            session.setAttribute("recurring_indicator", recurringIndicator);
+            session.setAttribute("frequency_per_day", frequencyPerDay);
+            session.setAttribute("expiration_time", expirationTime);
+            session.setAttribute("api_standard", apiStandard);
             session.setAttribute("acr_values", acrValues);
 
             // login before and checked rememberMe.
@@ -209,6 +218,10 @@ public class LoginController implements ServletContextAware {
 
     private static final Pattern CONSENT_ID_PATTERN = Pattern.compile(".*?consent_id=([^&$]*).*");
     private static final Pattern BANK_ID_PATTERN = Pattern.compile(".*?bank_id=([^&$]*).*");
+    private static final Pattern RECURRING_INDICATOR_PATTERN = Pattern.compile(".*?recurring_indicator=([^&$]*).*");
+    private static final Pattern FREQUENCY_PER_DAY_PATTERN = Pattern.compile(".*?frequency_per_day=([^&$]*).*");
+    private static final Pattern EXPIRATION_TIME_PATTERN = Pattern.compile(".*?expiration_time=([^&$]*).*");
+    private static final Pattern API_STANDARD_PATTERN = Pattern.compile(".*?api_standard=([^&$]*).*");
 
     /**
      * get consent_id query parameter from auth request url
@@ -230,6 +243,58 @@ public class LoginController implements ServletContextAware {
      */
     private String getBankId(String authRequestUrl) {
         Matcher matcher = BANK_ID_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get recurring_indicator query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getRecurringIndicator(String authRequestUrl) {
+        Matcher matcher = RECURRING_INDICATOR_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get frequency_per_day query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getFrequencyPerDay(String authRequestUrl) {
+        Matcher matcher = FREQUENCY_PER_DAY_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get expiration_time query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getExpirationTime(String authRequestUrl) {
+        Matcher matcher = EXPIRATION_TIME_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get api_standard query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getApiStandard(String authRequestUrl) {
+        Matcher matcher = API_STANDARD_PATTERN.matcher(authRequestUrl);
         if(matcher.matches()) {
            return matcher.replaceFirst("$1");
         } else {
