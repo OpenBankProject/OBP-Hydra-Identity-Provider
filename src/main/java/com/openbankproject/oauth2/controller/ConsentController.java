@@ -1,9 +1,7 @@
 package com.openbankproject.oauth2.controller;
 
 import com.nimbusds.jose.util.X509CertUtils;
-import com.openbankproject.oauth2.model.AccessToViewRequest;
-import com.openbankproject.oauth2.model.Accounts;
-import com.openbankproject.oauth2.model.PostConsentJson;
+import com.openbankproject.oauth2.model.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -97,6 +95,7 @@ public class ConsentController {
                 model.addAttribute("accounts", accounts.getBody().getIbanAccounts());
                 session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
                 session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
+                session.setAttribute("all_accounts_id_to_iban", accounts.getBody().getIdtoIbanMap());
                 if(ArrayUtils.isEmpty(accounts.getBody().getIbanAccounts())) {
                     String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                     model.addAttribute("client_url",clientUrl);
@@ -178,10 +177,15 @@ public class ConsentController {
             String recurringIndicator = (String) session.getAttribute("recurring_indicator");
             String expirationDateTime = (String) session.getAttribute("expiration_time");
             String frequencyPerDay = (String) session.getAttribute("frequency_per_day");
-            String[] allIbans  = (String[]) session.getAttribute("all_account_ibans");
+            Map<String, String> allAccountsIdToIban  = (Map<String, String>) session.getAttribute("all_accounts_id_to_iban");
+            List<String> selectedIbans = new ArrayList<>();
+            for (String accountId : accountIs) {
+                String iban = (String)allAccountsIdToIban.get(accountId);
+                selectedIbans.add(iban);
+            }
             PostConsentJson body = new PostConsentJson(
                     selectedObpScopes,
-                    allIbans,
+                    selectedIbans.toArray(new String[0]),
                     recurringIndicator.equalsIgnoreCase("true"),
                     expirationDateTime,
                     Integer.parseInt(frequencyPerDay),

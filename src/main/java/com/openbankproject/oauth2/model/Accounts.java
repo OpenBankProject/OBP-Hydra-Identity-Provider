@@ -1,5 +1,7 @@
 package com.openbankproject.oauth2.model;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class Accounts {
@@ -28,6 +30,14 @@ public class Accounts {
         return Stream.of(accounts)
                 .filter(accountMini -> accountMini.hasIban())
                 .map(AccountMini::getIban).toArray(String[]::new);
+    }
+    public Map<String, String> getIdtoIbanMap() {
+        Map<String, String> result = new HashMap<>();
+        AccountMini[] accounts = Stream.of(this.accounts).toArray(AccountMini[]::new);
+        for (AccountMini accountMini : accounts) {
+            result.put(accountMini.getId(), accountMini.getIban());
+        }
+        return result;
     }
 }
 
