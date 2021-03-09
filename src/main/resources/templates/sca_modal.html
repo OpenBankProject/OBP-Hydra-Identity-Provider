@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SCA</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/css/custom.css}" />
+
+    <!--[if lt IE 9]>
+    <script type="text/javascript" th:src="@{/js/html5shiv.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
+    <![endif]-->
+
+<body>
+<nav class="navbar navbar-light bg-light">
+    <a class="navbar-brand" th:href="@{${application.obp_url}}">
+        <img th:src="@{/images/logo.png}" height="60" class="d-inline-block align-top" alt="">
+    </a>
+</nav>
+
+<div id="custom">
+    <h3 class="text-center text-white pt-5">Strong Customer Authentication</h3>
+    <div class="container">
+        <div id="custom-row" class="row justify-content-center align-items-center">
+            <div id="custom-column" class="col-md-6 col-lg-offset-3">
+                <div class="alert alert-danger alert-dismissible col-md-12 hidden" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Warning!</strong>
+                    <span id="warning_msg" th:text="${errorMsg}">He show some error message.</span>
+                </div>
+                <div id="custom-box" class="col-md-12">
+                    <form id="custom-form" class="form" th:action="@{/strong_customer_authentication}" method="post">
+                        <h3 class="text-center">One Time Password</h3>
+                        <div class="form-group">
+                            
+                            <input type="password" name="password" id="password" class="form-control">
+                        </div>
+                        <input type="hidden" th:name="consent_challenge" th:value="${consent_challenge}">
+                        <div class="form-group">
+                            <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" th:src="@{/js/jquery-1.12.4.min.js}" ></script>
+<script type="text/javascript" th:src="@{/js/jquery-validate-1.19.2.min.js}" ></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}" ></script>
+<script type="text/javascript">
+    $(function(){
+        $("form").validate({
+            rules: {
+                username: "required",
+                password: "required",
+                login_challenge: "required",
+            },
+            messages: {
+                username: "Username should not be empty",
+                password: "Password should not be empty",
+                login_challenge: "login_challenge should not be empty",
+            }
+        });
+
+        if($('#warning_msg').text() !== '') {
+            $('.alert').removeClass('hidden');
+        }
+    });
+</script>
+</body>
+</html>

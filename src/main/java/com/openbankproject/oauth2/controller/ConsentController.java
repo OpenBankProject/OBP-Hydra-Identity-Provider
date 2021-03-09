@@ -1,7 +1,9 @@
 package com.openbankproject.oauth2.controller;
 
 import com.nimbusds.jose.util.X509CertUtils;
-import com.openbankproject.oauth2.model.*;
+import com.openbankproject.oauth2.model.AccessToViewRequest;
+import com.openbankproject.oauth2.model.Accounts;
+import com.openbankproject.oauth2.model.PostConsentJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sh.ory.hydra.ApiException;
 import sh.ory.hydra.api.AdminApi;
 import sh.ory.hydra.model.*;
@@ -45,6 +48,10 @@ public class ConsentController {
     private String getAccountsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
+    private String startConsentAuthorisation;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations/AUTHORISATION_ID")
+    private String updateConsentsPsuData;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
     private String keySetUrl;
 
@@ -116,6 +123,33 @@ public class ConsentController {
 
         return "accounts";
     }
+
+
+    @PostMapping(value="/strong_customer_authentication", params = {"consent_challenge", "password"})
+    public String doLogin(@RequestParam String consent_challenge,
+                          @RequestParam String password,
+                          HttpSession session,
+                          RedirectAttributes redirectModel, Model model) {
+        HttpHeaders headers = buildDirectLoginHeader(session);
+        String consentId = (String) session.getAttribute("consent_id");
+        String authorizationId = (String) session.getAttribute("authorizationId");
+        String url = updateConsentsPsuData.replace("CONSENT_ID", consentId)
+                .replace("AUTHORISATION_ID", authorizationId);
+        Map<String, String> body2 = new HashMap<>();
+        body2.put("scaAuthenticationData", password);
+        HttpEntity<Map<String, String>> entity2 = new HttpEntity<>(body2, headers);
+        try {
+            ResponseEntity<Map> response2 = restTemplate.exchange(url, HttpMethod.PUT, entity2, Map.class);
+            String redirect = (String) session.getAttribute("acceptConsentResponse.getRedirectTo()");
+            return "redirect:" + redirect;
+        } catch (Exception e) {
+            logger.error("OTP is wrong!", e);
+            model.addAttribute("errorMsg", "OTP is wrong!");
+            return "sca_modal";
+        }
+    }
+    
+    
     @PostMapping(value="/reset_access_to_views", params = "consent_challenge")
     public String resetAccessToViews(@RequestParam String consent_challenge,
                                      @RequestParam(value="accounts", required = false) String[] accountIs,
@@ -150,30 +184,9 @@ public class ConsentController {
                 .toArray(String[]::new);
         HttpHeaders headers = buildDirectLoginHeader(session);
         String[] allAccountIds = (String[]) session.getAttribute("all_account_ids");
-
-        { // process selected accounts
-            AccessToViewRequest body = new AccessToViewRequest(selectedObpScopes);
-            HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
-
-            for (String accountId : accountIs) {
-                if(!ArrayUtils.contains(allAccountIds, accountId)) continue;
-                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
-                restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
-            }
-        }
-
-        { // process not selected accounts
-            String[] notSelectAccountIds = ArrayUtils.removeElements(allAccountIds, accountIs);
-            AccessToViewRequest body = new AccessToViewRequest(ArrayUtils.EMPTY_STRING_ARRAY);
-            HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
-            for (String accountId : notSelectAccountIds) {
-                String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
-                restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
-            }
-        }
         
-        // Create Berlin Group Consent
-        if(apiStandard.equalsIgnoreCase("BerlinGroup")){ 
+        if(apiStandard.equalsIgnoreCase("BerlinGroup")){
+            // Create Berlin Group Consent
             String recurringIndicator = (String) session.getAttribute("recurring_indicator");
             String expirationDateTime = (String) session.getAttribute("expiration_time");
             String frequencyPerDay = (String) session.getAttribute("frequency_per_day");
@@ -195,14 +208,43 @@ public class ConsentController {
             Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
             String consentId = ((Map<String, String>) response).get("consentId");
             session.setAttribute("consent_id", consentId);
+
+            // Start consent authorization
+            Map<String, String> body2 = new HashMap<>();
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body2, headers);
+            String url = startConsentAuthorisation.replace("CONSENT_ID", consentId);
+            ResponseEntity<Map> response1 = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+            Map<String, String> links = (Map<String, String>) response1.getBody().get("_links");
+            String scaStatus = links.get("scaStatus");
+            String[] parts = scaStatus.split("authorisations/");
+            String authorizationId = parts[1];
+            session.setAttribute("authorizationId", authorizationId);
         }
-        { // update Consents status to AUTHORISED/ACCEPTED
-            Map<String, String> body = new HashMap<>();
-            if(apiStandard.equalsIgnoreCase("BerlinGroup")){
-                body.put("status", "ACCEPTED");
-            } else {
-                body.put("status", "AUTHORISED");
+        {
+            { // process selected accounts
+                AccessToViewRequest body = new AccessToViewRequest(selectedObpScopes);
+                HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
+
+                for (String accountId : accountIs) {
+                    if(!ArrayUtils.contains(allAccountIds, accountId)) continue;
+                    String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
+                    restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
+                }
             }
+
+            { // process not selected accounts
+                String[] notSelectAccountIds = ArrayUtils.removeElements(allAccountIds, accountIs);
+                AccessToViewRequest body = new AccessToViewRequest(ArrayUtils.EMPTY_STRING_ARRAY);
+                HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);
+                for (String accountId : notSelectAccountIds) {
+                    String url = resetAccessViewUrl.replace("BANK_ID", bankId).replace("ACCOUNT_ID", accountId);
+                    restTemplate.exchange(url, HttpMethod.PUT, entity, HashMap.class);
+                }
+            }
+            
+            // update Consents status to AUTHORISED
+            Map<String, String> body = new HashMap<>();
+            body.put("status", "AUTHORISED");
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
             String consentId = (String) session.getAttribute("consent_id");
             String url = updateConsentStatusUrl.replace("CONSENT_ID", consentId).replace("BANK_ID", bankId);
@@ -251,7 +293,13 @@ public class ConsentController {
             model.addAttribute("Accept consent request fail.", "consent_challenge is wrong!");
             return "error";
         }
-        return "redirect:" + acceptConsentResponse.getRedirectTo();
+        
+        if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
+            session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
+            return "sca_modal";
+        } else {
+            return "redirect:" + acceptConsentResponse.getRedirectTo();
+        }
     }
 
     private ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256, String sHash) {
