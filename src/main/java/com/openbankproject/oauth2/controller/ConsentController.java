@@ -141,6 +141,7 @@ public class ConsentController {
         try {
             ResponseEntity<Map> response2 = restTemplate.exchange(url, HttpMethod.PUT, entity2, Map.class);
             String redirect = (String) session.getAttribute("acceptConsentResponse.getRedirectTo()");
+            logger.info("redirect:" + redirect);
             return "redirect:" + redirect;
         } catch (Exception e) {
             String error = "Sorry! The one time password (OTP) you supplied is incorrect.";
@@ -296,6 +297,7 @@ public class ConsentController {
         
         if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
             session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
+            logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
             return "sca_modal";
         } else {
             return "redirect:" + acceptConsentResponse.getRedirectTo();
