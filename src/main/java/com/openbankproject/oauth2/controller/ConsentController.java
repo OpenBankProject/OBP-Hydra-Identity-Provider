@@ -125,7 +125,7 @@ public class ConsentController {
     }
 
 
-    @PostMapping(value="/strong_customer_authentication", params = {"consent_challenge", "password"})
+    @PostMapping(value="/sca2", params = {"consent_challenge", "password"})
     public String doLogin(@RequestParam String consent_challenge,
                           @RequestParam String password,
                           HttpSession session,
@@ -143,14 +143,15 @@ public class ConsentController {
             String redirect = (String) session.getAttribute("acceptConsentResponse.getRedirectTo()");
             return "redirect:" + redirect;
         } catch (Exception e) {
-            logger.error("OTP is wrong!", e);
-            model.addAttribute("errorMsg", "OTP is wrong!");
+            String error = "Sorry! The one time password (OTP) you supplied is incorrect.";
+            logger.error(error, e);
+            model.addAttribute("errorMsg", error);
             return "sca_modal";
         }
     }
     
     
-    @PostMapping(value="/reset_access_to_views", params = "consent_challenge")
+    @PostMapping(value="/sca1", params = "consent_challenge")
     public String resetAccessToViews(@RequestParam String consent_challenge,
                                      @RequestParam(value="accounts", required = false) String[] accountIs,
                                      @RequestParam(value="deny",required = false) String deny,
@@ -219,8 +220,7 @@ public class ConsentController {
             String[] parts = scaStatus.split("authorisations/");
             String authorizationId = parts[1];
             session.setAttribute("authorizationId", authorizationId);
-        }
-        {
+        } else {
             { // process selected accounts
                 AccessToViewRequest body = new AccessToViewRequest(selectedObpScopes);
                 HttpEntity<AccessToViewRequest> entity = new HttpEntity<>(body, headers);

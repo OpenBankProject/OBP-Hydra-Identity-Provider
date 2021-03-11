@@ -24,7 +24,7 @@
         <div class="row">
             <div class="col-sm-6 col-lg-offset-3">
                 <h2>Grant Access</h2>
-                <form th:action="@{/reset_access_to_views}" method="post" id="accept_form">
+                <form th:action="@{/sca1}" method="post" id="accept_form">
                     <label>I grant access to the following accounts</label>
                     <div class="alert alert-danger hidden" id="error_msg" role="alert">
                         You have no account in current bank.
@@ -66,7 +66,7 @@
                     </div>
                 </form>
 
-                <form th:action="@{/reset_access_to_views}" method="post" id="reject_form" class="hidden">
+                <form th:action="@{/sca1}" method="post" id="reject_form" class="hidden">
                     <input type="hidden" th:name="consent_challenge" th:value="${consent_challenge}">
                     <input type="hidden" th:name="deny" th:value="deny">
                 </form>
