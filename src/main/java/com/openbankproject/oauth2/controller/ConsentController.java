@@ -296,6 +296,7 @@ public class ConsentController {
         }
         
         if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
+            model.addAttribute("consent_challenge", consent_challenge);
             session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
             logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
             return "sca_modal";
