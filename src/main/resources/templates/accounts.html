@@ -31,11 +31,27 @@
                         <a class="alert-link" th:href="@{${client_url}}">Select other Bank</a>
                     </div>
                     <div class="form-group">
-                        <div class="checkbox" th:each="account : ${accounts}">
-                            <label>
-                                <input type="checkbox" name="accounts" th:value="${account.id}">
-                                <span th:text="${account.label}">Some account</span>
-                            </label>
+                        <div th:switch="${apiStandard}">
+                            <div th:case="'UKOpenBanking'" class="row">
+                                <div>
+                                    <div class="checkbox" th:each="account : ${accounts}">
+                                        <label>
+                                            <input type="checkbox" name="accounts" th:value="${account.id}">
+                                            <span th:text="${account.label}">Some account</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:case="'BerlinGroup'" class="row">
+                                <div>
+                                    <div class="checkbox" th:each="account : ${accounts}">
+                                        <label>
+                                            <input type="checkbox" name="accounts" th:value="${account.id}" checked readonly>
+                                            <span th:text="${account.label}">Some account</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <span class="text-danger" id="accounts_error"></span>
                     </div>

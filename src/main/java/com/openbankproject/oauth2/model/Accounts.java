@@ -1,6 +1,8 @@
 package com.openbankproject.oauth2.model;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -13,6 +15,11 @@ public class Accounts {
     public AccountMini[] getIbanAccounts() {
         return Stream.of(accounts)
                 .filter(accountMini -> accountMini.hasIban()).toArray(AccountMini[]::new);
+    }
+    public AccountMini[] getIbanAccounts(String[] ibans) {
+        List<String> otherList = Arrays.asList(ibans);
+        Stream<AccountMini> result = Stream.of(accounts).filter(x -> otherList.contains(x.getIban()));
+        return result.toArray(AccountMini[]::new);
     }
 
     public void setAccounts(AccountMini[] accounts) {
@@ -48,6 +55,9 @@ class AccountMini {
     
     public boolean hasIban() {
         return Stream.of(account_routings).anyMatch(i -> i.getScheme().equalsIgnoreCase("IBAN"));
+    }    
+    public boolean hasIban(String iban) {
+        return Stream.of(account_routings).anyMatch(i -> i.getAddress().equalsIgnoreCase(iban));
     }    
     public String getIban() {
         return Stream.of(account_routings).filter(i -> i.getScheme().equalsIgnoreCase("IBAN")).map(i -> i.getAddress()).findAny().orElse("");

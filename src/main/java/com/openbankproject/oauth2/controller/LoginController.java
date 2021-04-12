@@ -79,6 +79,7 @@ public class LoginController implements ServletContextAware {
             String requestUrl = loginRequest.getRequestUrl();
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
+            String iban = getIban(requestUrl);
             String recurringIndicator = getRecurringIndicator(requestUrl);
             String frequencyPerDay = getFrequencyPerDay(requestUrl);
             String expirationTime = getExpirationTime(requestUrl);
@@ -137,6 +138,7 @@ public class LoginController implements ServletContextAware {
 
             session.setAttribute("consent_id", consentId);
             session.setAttribute("bank_id", bankId);
+            session.setAttribute("iban", iban);
             session.setAttribute("recurring_indicator", recurringIndicator);
             session.setAttribute("frequency_per_day", frequencyPerDay);
             session.setAttribute("expiration_time", expirationTime);
@@ -218,6 +220,7 @@ public class LoginController implements ServletContextAware {
 
     private static final Pattern CONSENT_ID_PATTERN = Pattern.compile(".*?consent_id=([^&$]*).*");
     private static final Pattern BANK_ID_PATTERN = Pattern.compile(".*?bank_id=([^&$]*).*");
+    private static final Pattern IBAN_PATTERN = Pattern.compile(".*?iban=([^&$]*).*");
     private static final Pattern RECURRING_INDICATOR_PATTERN = Pattern.compile(".*?recurring_indicator=([^&$]*).*");
     private static final Pattern FREQUENCY_PER_DAY_PATTERN = Pattern.compile(".*?frequency_per_day=([^&$]*).*");
     private static final Pattern EXPIRATION_TIME_PATTERN = Pattern.compile(".*?expiration_time=([^&$]*).*");
@@ -243,6 +246,19 @@ public class LoginController implements ServletContextAware {
      */
     private String getBankId(String authRequestUrl) {
         Matcher matcher = BANK_ID_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get bank_id query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getIban(String authRequestUrl) {
+        Matcher matcher = IBAN_PATTERN.matcher(authRequestUrl);
         if(matcher.matches()) {
            return matcher.replaceFirst("$1");
         } else {

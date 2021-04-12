@@ -3,7 +3,6 @@ package com.openbankproject.oauth2.controller;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.Accounts;
-import com.openbankproject.oauth2.model.PostConsentJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -94,12 +93,14 @@ public class ConsentController {
 
         { // prepare account list
             String bankId = (String) session.getAttribute("bank_id");
+            String[] ibans = ((String) session.getAttribute("iban")).split(",");
             String apiStandard = (String) session.getAttribute("api_standard");
+            model.addAttribute("apiStandard", apiStandard);
             HttpHeaders headers = buildDirectLoginHeader(session);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
             if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
-                model.addAttribute("accounts", accounts.getBody().getIbanAccounts());
+                model.addAttribute("accounts", accounts.getBody().getIbanAccounts(ibans));
                 session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
                 session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
                 session.setAttribute("all_accounts_id_to_iban", accounts.getBody().getIdtoIbanMap());
@@ -188,30 +189,8 @@ public class ConsentController {
         String[] allAccountIds = (String[]) session.getAttribute("all_account_ids");
         
         if(apiStandard.equalsIgnoreCase("BerlinGroup")){
-            // Create Berlin Group Consent
-            String recurringIndicator = (String) session.getAttribute("recurring_indicator");
-            String expirationDateTime = (String) session.getAttribute("expiration_time");
-            String frequencyPerDay = (String) session.getAttribute("frequency_per_day");
-            Map<String, String> allAccountsIdToIban  = (Map<String, String>) session.getAttribute("all_accounts_id_to_iban");
-            List<String> selectedIbans = new ArrayList<>();
-            for (String accountId : accountIs) {
-                String iban = (String)allAccountsIdToIban.get(accountId);
-                selectedIbans.add(iban);
-            }
-            PostConsentJson body = new PostConsentJson(
-                    selectedObpScopes,
-                    selectedIbans.toArray(new String[0]),
-                    recurringIndicator.equalsIgnoreCase("true"),
-                    expirationDateTime,
-                    Integer.parseInt(frequencyPerDay),
-                    false
-            );
-            HttpEntity<PostConsentJson> request = new HttpEntity<>(body, headers);
-            Map response = restTemplate.postForObject(createBerlinGroupConsentsUrl, request, Map.class);
-            String consentId = ((Map<String, String>) response).get("consentId");
-            session.setAttribute("consent_id", consentId);
-
             // Start consent authorization
+            String consentId = (String) session.getAttribute("consent_id");
             Map<String, String> body2 = new HashMap<>();
             HttpEntity<Map<String, String>> entity = new HttpEntity<>(body2, headers);
             String url = startConsentAuthorisation.replace("CONSENT_ID", consentId);
