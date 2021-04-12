@@ -15,6 +15,9 @@
     <script type="text/javascript" th:src="@{/js/respond.min.js}" ></script>
     <![endif]-->
 
+    <style th:if="${buttonBackgroundColor  != null}" th:text="'.btn-danger {background-color: ' + ${buttonBackgroundColor} + ';} .btn-danger:hover {background-color: ' + ${buttonHoverBackgroundColor} + ';}'"></style>
+    <style th:unless="${displayStandards == 'BerlinGroup'}"></style>
+
 <body>
 <nav class="navbar navbar-light bg-light">
     <a class="navbar-brand" th:href="@{${application.obp_url}}">
@@ -47,7 +50,7 @@
                             <label for="remember-me">
                                 <input id="remember-me" name="rememberMe" type="checkbox" th:checked="${rememberMe}">
                                 <span> Remember me</span></label><br>
-                            <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
+                            <input type="submit" name="submit" class="btn btn-danger btn-md" value="submit">
                         </div>
                     </form>
                 </div>
