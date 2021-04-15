@@ -128,7 +128,7 @@ public class ConsentController {
             return "accounts";
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
-            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
         }
@@ -162,7 +162,7 @@ public class ConsentController {
             }
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
-            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage()); 
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException); 
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
         }
@@ -301,7 +301,7 @@ public class ConsentController {
             }
         } catch (Exception unhandledException) {
             logger.error("Error: ", unhandledException);
-            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
+            if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException);
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
         }
