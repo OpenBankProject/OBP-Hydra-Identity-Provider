@@ -96,13 +96,13 @@ public class ConsentController {
 
             { // prepare account list
                 String bankId = (String) session.getAttribute("bank_id");
-                String[] ibans = ((String) session.getAttribute("iban")).split(",");
                 String apiStandard = (String) session.getAttribute("api_standard");
                 model.addAttribute("apiStandard", apiStandard);
                 HttpHeaders headers = buildDirectLoginHeader(session);
                 HttpEntity<String> entity = new HttpEntity<>(headers);
                 ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
                 if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
+                    String[] ibans = ((String) session.getAttribute("iban")).split(",");
                     model.addAttribute("accounts", accounts.getBody().getIbanAccounts(ibans));
                     session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
                     session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
@@ -127,6 +127,7 @@ public class ConsentController {
 
             return "accounts";
         } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
@@ -160,6 +161,7 @@ public class ConsentController {
                 return "sca_modal";
             }
         } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage()); 
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
@@ -298,6 +300,7 @@ public class ConsentController {
                 return "redirect:" + acceptConsentResponse.getRedirectTo();
             }
         } catch (Exception unhandledException) {
+            logger.error("Error: ", unhandledException);
             if(showUnhandledErrors) model.addAttribute("errorMsg", unhandledException.getMessage());
             else model.addAttribute("errorMsg", "Internal Server Error");
             return "error";
