@@ -1,10 +1,19 @@
 package com.openbankproject.oauth2.model;
 
+import java.util.stream.Stream;
+
 public class ConsentsInfo {
     private ConsentInfo[] consents;
 
     public ConsentInfo[] getConsents() {
         return consents;
+    }
+    public ConsentInfo[] getConsents(String standard, String status) {
+        return Stream.of(consents)
+                .filter(i -> i.getApi_standard() != null)
+                .filter(i -> i.getApi_standard().equalsIgnoreCase(standard))
+                .filter(i -> !i.getStatus().equalsIgnoreCase(status))
+                .toArray(ConsentInfo[]::new);
     }
 
     public void setConsents(ConsentInfo[] consents) {

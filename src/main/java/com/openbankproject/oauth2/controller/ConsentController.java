@@ -33,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
 
@@ -105,7 +106,7 @@ public class ConsentController {
                 HttpHeaders headers = buildDirectLoginHeader(session);
                 HttpEntity<String> entity = new HttpEntity<>(headers);
                 ResponseEntity<ConsentsInfo> consents = restTemplate.exchange(getConsentsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, ConsentsInfo.class);
-                model.addAttribute("consents", consents.getBody().getConsents());
+                model.addAttribute("consents", consents.getBody().getConsents("BG", "REVOKED"));
                 return "consents";
             }
 
