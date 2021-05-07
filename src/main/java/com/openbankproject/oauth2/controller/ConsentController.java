@@ -3,6 +3,7 @@ package com.openbankproject.oauth2.controller;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.Accounts;
+import com.openbankproject.oauth2.model.ConsentsInfo;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -47,10 +48,14 @@ public class ConsentController {
     private String getAccountsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
+    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/my/consents")
+    private String getConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
     private String startConsentAuthorisation;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations/AUTHORISATION_ID")
     private String updateConsentsPsuData;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
+    private String deleteConsentBerlinGroup;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
     private String keySetUrl;
     @Value("${show_unhandled_errors:false}")
@@ -94,8 +99,17 @@ public class ConsentController {
                 return "error";
             }
 
+            String bankId = (String) session.getAttribute("bank_id");
+            String consentId = (String) session.getAttribute("consent_id");
+            if(consentId.equalsIgnoreCase("Utility-List-Consents")) {
+                HttpHeaders headers = buildDirectLoginHeader(session);
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+                ResponseEntity<ConsentsInfo> consents = restTemplate.exchange(getConsentsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, ConsentsInfo.class);
+                model.addAttribute("consents", consents.getBody().getConsents());
+                return "consents";
+            }
+
             { // prepare account list
-                String bankId = (String) session.getAttribute("bank_id");
                 String apiStandard = (String) session.getAttribute("api_standard");
                 model.addAttribute("apiStandard", apiStandard);
                 HttpHeaders headers = buildDirectLoginHeader(session);
@@ -168,6 +182,38 @@ public class ConsentController {
         }
     }
     
+    
+    @PostMapping(value="/revoke_consents", params = "consent_challenge")
+    public String revokeConsents(@RequestParam String consent_challenge,
+                                     @RequestParam(value="consents", required = false) String[] consentIds,
+                                     @RequestParam(value="deny",required = false) String deny,
+                                     HttpSession session, Model model) throws NoSuchAlgorithmException, ApiException {
+        if(StringUtils.isNotBlank(deny)) {
+            final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
+            final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
+            return "redirect:" + completedRequest.getRedirectTo();
+        }
+        if(ArrayUtils.isEmpty(consentIds)) {
+            model.addAttribute("errorMsg", "consents field is mandatory!");
+            return "error";
+        }
+        
+        try { // Delete all selected consents
+            HttpHeaders headers = buildDirectLoginHeader(session);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            for (String consentId : consentIds) {
+                String url = deleteConsentBerlinGroup.replace("CONSENT_ID", consentId);
+                ResponseEntity<Map> deletedConsent = restTemplate.exchange(url, HttpMethod.DELETE, entity, Map.class);
+                logger.debug("ConsentID: " + consentId + " is deleted: " + deletedConsent.getStatusCodeValue());
+            }
+        } catch (Exception e) {
+            logger.error("Cannot delete consents!", e);
+            model.addAttribute("errorMsg", "Cannot delete consents!");
+            return "error";
+        }
+        model.addAttribute("errorMsg", "All selected consents have been deleted!");
+        return "error";
+    }
     
     @PostMapping(value="/sca1", params = "consent_challenge")
     public String resetAccessToViews(@RequestParam String consent_challenge,

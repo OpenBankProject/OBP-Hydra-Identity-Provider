@@ -125,7 +125,9 @@ public class RestTemplateConfig {
             // Get HTTP body from the response
             String httpBody = "";
             try {
-                httpBody = getHttpResponseBody(response.getEntity().getContent()).toString();
+                if(response.getEntity() != null && response.getEntity().getContent() != null) {
+                    httpBody = getHttpResponseBody(response.getEntity().getContent()).toString();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -86,32 +86,36 @@ public class LoginController implements ServletContextAware {
             String requestUrl = loginRequest.getRequestUrl();
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
-            String iban = getIban(requestUrl);
-            String recurringIndicator = getRecurringIndicator(requestUrl);
-            String frequencyPerDay = getFrequencyPerDay(requestUrl);
-            String expirationTime = getExpirationTime(requestUrl);
-            String apiStandard = getApiStandard(requestUrl);
-            final List<String> acrValues = loginRequest.getOidcContext().getAcrValues();
-            if(bankId == null) {
-                model.addAttribute("errorMsg", "Query parameter `bank_id` is mandatory! ");
-                return "error";
-            }
-            if(consentId  == null) {
-                final String createConsentUrl = getConsentUrl.replace("/CONSENT_ID", "");
-                model.addAttribute(
-                        "errorMsg", "Query parameter `consent_id` is mandatory! " +
-                        "Hint: create client_credentials accessToken, create Account Access Consents by call endpoint `CreateAccountAccessConsents` (" +
-                         createConsentUrl +
-                         "), " +
-                         "with header Authorization: Authorization: Bearer <accessToken>");
-                return "error";
-            }
-            // TODO acr value should do more validation
+            if(consentId.equalsIgnoreCase("Utility-List-Consents")) {
+                session.setAttribute("consent_id", consentId);
+                session.setAttribute("bank_id", bankId);
+            } else {
+                String iban = getIban(requestUrl);
+                String recurringIndicator = getRecurringIndicator(requestUrl);
+                String frequencyPerDay = getFrequencyPerDay(requestUrl);
+                String expirationTime = getExpirationTime(requestUrl);
+                String apiStandard = getApiStandard(requestUrl);
+                final List<String> acrValues = loginRequest.getOidcContext().getAcrValues();
+                if(bankId == null) {
+                    model.addAttribute("errorMsg", "Query parameter `bank_id` is mandatory! ");
+                    return "error";
+                }
+                if(consentId  == null) {
+                    final String createConsentUrl = getConsentUrl.replace("/CONSENT_ID", "");
+                    model.addAttribute(
+                            "errorMsg", "Query parameter `consent_id` is mandatory! " +
+                                    "Hint: create client_credentials accessToken, create Account Access Consents by call endpoint `CreateAccountAccessConsents` (" +
+                                    createConsentUrl +
+                                    "), " +
+                                    "with header Authorization: Authorization: Bearer <accessToken>");
+                    return "error";
+                }
+                // TODO acr value should do more validation
 //            if(CollectionUtils.isEmpty(acrValues)) {
 //                model.addAttribute("errorMsg", "Query parameter `acr_values` is mandatory! ");
 //                return "error";
 //            }
-            // TODO in order make old consumer works, the request and request_uri are optional.
+                // TODO in order make old consumer works, the request and request_uri are optional.
 //            if(!requestUrl.contains("request") && !requestUrl.contains("request_uri")) {
 //                model.addAttribute(
 //                        "errorMsg", "Query parameter `request` and `request_uri` at least one must be supplied! " +
@@ -119,39 +123,39 @@ public class LoginController implements ServletContextAware {
 //                return "error";
 //            }
 
-            try {
-                if(!apiStandard.equalsIgnoreCase("BerlinGroup"))
-                {// validate consentId
-                    Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
-                    Map<String, Object> data = ((Map<String, Object>) responseBody.get("Data"));
-                    if(data == null || data.isEmpty()) {
-                        model.addAttribute("errorMsg", "Consent content have no required Data field");
-                        return "error";
-                    }
+                try {
+                    if(!apiStandard.equalsIgnoreCase("BerlinGroup"))
+                    {// validate consentId
+                        Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
+                        Map<String, Object> data = ((Map<String, Object>) responseBody.get("Data"));
+                        if(data == null || data.isEmpty()) {
+                            model.addAttribute("errorMsg", "Consent content have no required Data field");
+                            return "error";
+                        }
 
-                    String status = ((String) data.get("Status"));
-                    if(!"AWAITINGAUTHORISATION".equals(status)) {
-                        model.addAttribute("errorMsg", "The Consent status should be AWAITINGAUTHORISATION, but current status is " + status);
-                        return "error";
+                        String status = ((String) data.get("Status"));
+                        if(!"AWAITINGAUTHORISATION".equals(status)) {
+                            model.addAttribute("errorMsg", "The Consent status should be AWAITINGAUTHORISATION, but current status is " + status);
+                            return "error";
+                        }
                     }
+                    {// validate bankId
+                        idVerifier.apply(getBankUrl.replace("BANK_ID", bankId));
+                    }
+                } catch (Exception e) {
+                    model.addAttribute("errorMsg", e.getMessage());
+                    return "error";
                 }
-                {// validate bankId
-                    idVerifier.apply(getBankUrl.replace("BANK_ID", bankId));
-                }
-            } catch (Exception e) {
-                model.addAttribute("errorMsg", e.getMessage());
-                return "error";
+
+                session.setAttribute("consent_id", consentId);
+                session.setAttribute("bank_id", bankId);
+                session.setAttribute("iban", iban);
+                session.setAttribute("recurring_indicator", recurringIndicator);
+                session.setAttribute("frequency_per_day", frequencyPerDay);
+                session.setAttribute("expiration_time", expirationTime);
+                session.setAttribute("api_standard", apiStandard);
+                session.setAttribute("acr_values", acrValues);
             }
-
-            session.setAttribute("consent_id", consentId);
-            session.setAttribute("bank_id", bankId);
-            session.setAttribute("iban", iban);
-            session.setAttribute("recurring_indicator", recurringIndicator);
-            session.setAttribute("frequency_per_day", frequencyPerDay);
-            session.setAttribute("expiration_time", expirationTime);
-            session.setAttribute("api_standard", apiStandard);
-            session.setAttribute("acr_values", acrValues);
-
             // login before and checked rememberMe.
             if(loginRequest.getSkip() && session.getAttribute("directLoginToken") != null) {
                 AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
