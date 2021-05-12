@@ -55,6 +55,11 @@
                     <strong>Authorization status: </strong>
                     <span id="authorization_status_message" th:text="${authorization_status}">He show consent status message.</span>
                 </div>
+                <div id="alert_info3" class="alert alert-info alert-dismissible col-md-12 hidden" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Authorization ids: </strong>
+                    <span id="authorization_ids_message" th:text="${authorization_ids}">He show consent status message.</span>
+                </div>
             </div>
         </div>
     </div>
@@ -85,6 +90,9 @@
         }
         if($('#authorization_status_message').text() !== '') {
             $('#alert_info2').removeClass('hidden');
+        }
+        if($('#authorization_ids_message').text() !== '') {
+            $('#alert_info3').removeClass('hidden');
         }
     });
 </script>
