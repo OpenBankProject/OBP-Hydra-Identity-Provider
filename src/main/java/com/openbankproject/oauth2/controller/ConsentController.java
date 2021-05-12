@@ -57,6 +57,8 @@ public class ConsentController {
     private String updateConsentsPsuData;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID")
     private String deleteConsentBerlinGroup;
+    @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/status")
+    private String getConsentStatus;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
     private String keySetUrl;
     @Value("${show_unhandled_errors:false}")
@@ -339,6 +341,11 @@ public class ConsentController {
             }
 
             if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
+                // Get status of the consent
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+                ResponseEntity<Map> consents = restTemplate.exchange(getConsentStatus.replace("CONSENT_ID", consentId), HttpMethod.GET, entity, Map.class);
+                model.addAttribute("consent_status", (String)consents.getBody().get("consentStatus"));
+                
                 model.addAttribute("consent_challenge", consent_challenge);
                 session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
                 logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
