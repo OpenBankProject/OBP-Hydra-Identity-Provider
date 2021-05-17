@@ -68,6 +68,9 @@ public class ConsentController {
     @Value("${show_unhandled_errors:false}")
     private boolean showUnhandledErrors;
 
+    @Value("${logo.bank.enabled:false}")
+    private String showBankLogo;
+
     @Resource
     private RestTemplate restTemplate;
     @Resource
@@ -145,6 +148,7 @@ public class ConsentController {
                     .filter(it -> !it.equals("openid") && !it.equals("offline"))
                     .toArray(String[]::new);
             model.addAttribute("consents", consents);
+            model.addAttribute("showBankLogo", showBankLogo);
 
             return "accounts";
         } catch (Exception unhandledException) {
@@ -162,6 +166,7 @@ public class ConsentController {
                           HttpSession session,
                           RedirectAttributes redirectModel, Model model) {
         try {
+            model.addAttribute("showBankLogo", showBankLogo);
             HttpHeaders headers = buildDirectLoginHeader(session);
             String consentId = (String) session.getAttribute("consent_id");
             String authorizationId = (String) session.getAttribute("authorizationId");
@@ -228,6 +233,7 @@ public class ConsentController {
                                      @RequestParam(value="deny",required = false) String deny,
                                      HttpSession session, Model model) throws NoSuchAlgorithmException, ApiException {
         try{
+            model.addAttribute("showBankLogo", showBankLogo);
             if(StringUtils.isNotBlank(deny)) {
                 final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
                 final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
