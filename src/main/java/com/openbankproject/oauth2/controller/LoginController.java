@@ -64,6 +64,9 @@ public class LoginController implements ServletContextAware {
     @Value("${button.hover.background_color:#b92c28}")
     private String buttonHoverBackgroundColor;
 
+    @Value("${logo.bank.enabled:false}")
+    private String showBankLogo;
+
     /**
      * initiate global variable
      * @param servletContext
@@ -80,6 +83,7 @@ public class LoginController implements ServletContextAware {
         model.addAttribute("login_challenge", login_challenge);
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
+        model.addAttribute("showBankLogo", showBankLogo);
 
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
