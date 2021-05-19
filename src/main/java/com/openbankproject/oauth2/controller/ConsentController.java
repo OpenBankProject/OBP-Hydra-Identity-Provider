@@ -71,6 +71,9 @@ public class ConsentController {
     @Value("${logo.bank.enabled:false}")
     private String showBankLogo;
 
+    @Value("${obp.base_url:#}")
+    private String obpBaseUrl;
+
     @Resource
     private RestTemplate restTemplate;
     @Resource
@@ -149,6 +152,7 @@ public class ConsentController {
                     .toArray(String[]::new);
             model.addAttribute("consents", consents);
             model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
 
             return "accounts";
         } catch (Exception unhandledException) {
@@ -167,6 +171,7 @@ public class ConsentController {
                           RedirectAttributes redirectModel, Model model) {
         try {
             model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
             HttpHeaders headers = buildDirectLoginHeader(session);
             String consentId = (String) session.getAttribute("consent_id");
             String authorizationId = (String) session.getAttribute("authorizationId");
@@ -234,6 +239,7 @@ public class ConsentController {
                                      HttpSession session, Model model) throws NoSuchAlgorithmException, ApiException {
         try{
             model.addAttribute("showBankLogo", showBankLogo);
+            model.addAttribute("obpBaseUrl", obpBaseUrl);
             if(StringUtils.isNotBlank(deny)) {
                 final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
                 final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);

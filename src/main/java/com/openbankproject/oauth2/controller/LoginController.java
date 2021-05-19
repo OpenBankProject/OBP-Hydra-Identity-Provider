@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 public class LoginController implements ServletContextAware {
     private static Logger logger = LoggerFactory.getLogger(LoginController.class);
 
-    @Value("${obp.base_url}")
+    @Value("${obp.base_url:#}")
     private String obpBaseUrl;
 
     @Value("${obp.base_url}/my/logins/direct")
@@ -66,7 +66,7 @@ public class LoginController implements ServletContextAware {
 
     @Value("${logo.bank.enabled:false}")
     private String showBankLogo;
-
+    
     /**
      * initiate global variable
      * @param servletContext
@@ -84,6 +84,7 @@ public class LoginController implements ServletContextAware {
         model.addAttribute("buttonBackgroundColor", buttonBackgroundColor);
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         model.addAttribute("showBankLogo", showBankLogo);
+        model.addAttribute("obpBaseUrl", obpBaseUrl);
 
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
