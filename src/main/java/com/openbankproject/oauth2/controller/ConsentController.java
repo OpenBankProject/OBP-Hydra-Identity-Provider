@@ -334,6 +334,7 @@ public class ConsentController {
             final Map<String, String> metadata = ((Map<String, String>) client.getMetadata());
             String x5tS256 = null;
             if(metadata != null && metadata.get("client_certificate") != null) {
+                logger.debug("client_certificate: " + metadata.get("client_certificate"));
                 x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(metadata.get("client_certificate"))).toString();
             }
 
