@@ -27,6 +27,7 @@ import sh.ory.hydra.model.*;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -335,7 +336,8 @@ public class ConsentController {
             String x5tS256 = null;
             if(metadata != null && metadata.get("client_certificate") != null) {
                 logger.debug("client_certificate: " + metadata.get("client_certificate"));
-                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(metadata.get("client_certificate"))).toString();
+                String decodedPem = URLDecoder.decode(metadata.get("client_certificate"),"UTF-8")
+                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(decodedPem)).toString();
             }
 
             final String state = getState(consentRequest.getRequestUrl());
