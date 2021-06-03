@@ -336,7 +336,7 @@ public class ConsentController {
             String x5tS256 = null;
             if(metadata != null && metadata.get("client_certificate") != null) {
                 logger.debug("client_certificate: " + metadata.get("client_certificate"));
-                String decodedPem = URLDecoder.decode(metadata.get("client_certificate"),"UTF-8")
+                String decodedPem = URLDecoder.decode(metadata.get("client_certificate"),"UTF-8");
                 x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(decodedPem)).toString();
             }
 
