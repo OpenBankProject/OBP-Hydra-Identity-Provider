@@ -66,6 +66,8 @@ public class LoginController implements ServletContextAware {
 
     @Value("${logo.bank.enabled:false}")
     private String showBankLogo;
+    @Value("${logo.bank.url:#}")
+    private String bankLogoUrl;
     
     /**
      * initiate global variable
@@ -85,6 +87,7 @@ public class LoginController implements ServletContextAware {
         model.addAttribute("buttonHoverBackgroundColor", buttonHoverBackgroundColor);
         model.addAttribute("showBankLogo", showBankLogo);
         model.addAttribute("obpBaseUrl", obpBaseUrl);
+        model.addAttribute("bankLogoUrl", bankLogoUrl);
 
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);

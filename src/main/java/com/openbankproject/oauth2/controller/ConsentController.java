@@ -71,6 +71,8 @@ public class ConsentController {
 
     @Value("${logo.bank.enabled:false}")
     private String showBankLogo;
+    @Value("${logo.bank.url:#}")
+    private String bankLogoUrl;
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
@@ -154,6 +156,7 @@ public class ConsentController {
             model.addAttribute("consents", consents);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
 
             return "accounts";
         } catch (Exception unhandledException) {
@@ -173,6 +176,7 @@ public class ConsentController {
         try {
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
             HttpHeaders headers = buildDirectLoginHeader(session);
             String consentId = (String) session.getAttribute("consent_id");
             String authorizationId = (String) session.getAttribute("authorizationId");
@@ -241,6 +245,7 @@ public class ConsentController {
         try{
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
+            model.addAttribute("bankLogoUrl", bankLogoUrl);
             if(StringUtils.isNotBlank(deny)) {
                 final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
                 final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
