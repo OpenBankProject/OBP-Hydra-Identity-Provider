@@ -76,6 +76,9 @@ public class ConsentController {
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
+    
+    @Value("${pem.decode.enabled:true}")
+    private Boolean decodePem;
 
     @Resource
     private RestTemplate restTemplate;
@@ -341,8 +344,11 @@ public class ConsentController {
             String x5tS256 = null;
             if(metadata != null && metadata.get("client_certificate") != null) {
                 logger.debug("client_certificate: " + metadata.get("client_certificate"));
-                String decodedPem = URLDecoder.decode(metadata.get("client_certificate"),"UTF-8");
-                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(decodedPem)).toString();
+                String pem = metadata.get("client_certificate");
+                if(decodePem == true) {
+                    pem = URLDecoder.decode(pem,"UTF-8");
+                }
+                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(pem)).toString();
             }
 
             final String state = getState(consentRequest.getRequestUrl());
