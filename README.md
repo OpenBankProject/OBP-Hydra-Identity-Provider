@@ -96,11 +96,11 @@ execute command to start this project: `java -jar hydra-identity-provider-xxx.ja
 
 So the project running on `http://localhost:8086`
 
-### 4. Deploy demo project `obp-hydra-auth2`:  [OBP-Hydra-OAuth2](https://github.com/OpenBankProject/OBP-Hydra-OAuth2)
+### 4. Deploy demo project `obp-hola`:  [OBP-Hola](https://github.com/OpenBankProject/OBP-Hola)
 
 execute command: `mvn clean package`
 
-generate jar file in target folder: obp-hydra-auth2-xxx.jar
+generate jar file in target folder: obp-hydra-auth2-xxx.jar (note this might have changed to obp-hola as the repository was renamed)
 
 create file `application.properties`, and the content as follows:
 ```
