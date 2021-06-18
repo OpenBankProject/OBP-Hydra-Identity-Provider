@@ -1,7 +1,15 @@
 package com.openbankproject.oauth2;
 
 import com.openbankproject.oauth2.model.DirectLoginResponse;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.protocol.HttpContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,6 +24,9 @@ import sh.ory.hydra.api.AdminApi;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -23,6 +34,8 @@ import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHe
 
 @SpringBootApplication
 public class Oauth2Application {
+    private static final Logger logger = LoggerFactory.getLogger(Oauth2Application.class);
+    
     @Value("${oauth2.admin_url}")
     private String hydraAdminUrl;
     @Value("${identity_provider.user.username}")
@@ -48,9 +61,57 @@ public class Oauth2Application {
         final OkHttpClient httpClient = defaultClient.getHttpClient();
         final OkHttpClient okHttpClient = httpClient.newBuilder()
                 .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
+                .addInterceptor(new OkHttpClientLoggingInterceptor())
                 .build();
         defaultClient.setHttpClient(okHttpClient);
         return new AdminApi(defaultClient);
+    }
+
+    public class OkHttpClientLoggingInterceptor implements Interceptor {
+
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+
+            logger.info("=========================== request begin ================================================");
+            logger.info("=== Method : {}", request.method());
+            logger.info("=== URL : {}", request.url());
+            logger.info("=== Headers : {}", StringUtils.join(request.headers(), "; "));
+            logger.info("============================= request end ================================================");
+
+            return chain.proceed(request);
+        }
+    }
+
+    private void requestIntercept(org.apache.http.HttpRequest request, HttpContext httpContext) {
+        String httpBody = getHttpBody(request).toString();
+        logger.info("=========================== request begin ================================================");
+        logger.info("=== Request Line : {}", request.getRequestLine());
+        logger.info("=== Headers : {}", StringUtils.join(request.getAllHeaders(), "; "));
+        logger.info("=== Request body: {}", httpBody);
+        logger.info("============================= request end ================================================");
+    }
+
+    private StringBuilder getHttpBody(org.apache.http.HttpRequest request) {
+        StringBuilder httpBody = new StringBuilder();
+        if(request instanceof HttpEntityEnclosingRequest) {
+            HttpEntityEnclosingRequest enclosingRequest = ((HttpEntityEnclosingRequest) request);
+            org.apache.http.HttpEntity requestEntity = enclosingRequest.getEntity();
+
+            try {
+                InputStream inputStream =  requestEntity.getContent();
+                try (Reader reader = new BufferedReader(new InputStreamReader
+                        (inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+                    int c = 0;
+                    while ((c = reader.read()) != -1) {
+                        httpBody.append((char) c);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return httpBody;
     }
 
     /**
