@@ -201,8 +201,8 @@ public class LoginController implements ServletContextAware {
         }
         //DirectLogin username="robert.xuk.x@example.com",password="5232e7",consumer_key="yp5tgl0thzjj1jk0sobqljpxyo514dsjvxoe1ngy"
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization",
-                "DirectLogin username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
+        headers.add("DirectLogin",
+                "username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
         );
         HttpEntity<String> entity = new HttpEntity<>(headers);
 

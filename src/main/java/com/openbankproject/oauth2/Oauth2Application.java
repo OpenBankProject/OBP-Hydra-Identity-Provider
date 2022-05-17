@@ -122,8 +122,8 @@ public class Oauth2Application {
     @Bean
     public Function<String, Map<String, Object>> idVerifier(RestTemplate restTemplate) {
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization",
-                "DirectLogin username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
+        headers.add("DirectLogin",
+                "username=\""+username+"\",password=\""+password+"\",consumer_key=\""+consumerKey+"\""
         );
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);
