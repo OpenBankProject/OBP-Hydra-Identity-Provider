@@ -55,6 +55,18 @@
                                     </div>
                                 </div>
                             </div>
+                            <div th:case="'OBP'" class="row">
+                                <div>
+                                    <div class="checkbox" th:each="account : ${accounts}">
+                                        <label>
+                                            <div class="invisible"> <!-- https://getbootstrap.com/docs/4.0/utilities/visibility/ -->
+                                                <input type="checkbox" name="accounts" th:value="${account.id}" onclick="return false;" checked readonly>
+                                            </div>
+                                            <span th:text="${account.label}">Some account</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <span class="text-danger" id="accounts_error"></span>
                     </div>

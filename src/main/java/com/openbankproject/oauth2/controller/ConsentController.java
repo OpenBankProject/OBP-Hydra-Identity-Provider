@@ -34,7 +34,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
 
@@ -62,6 +61,13 @@ public class ConsentController {
     private String getConsentStatus;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations/AUTHORISATION_ID")
     private String getConsentScaStatus;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/challenge")
+    private String answerConsentChallenge;
+    
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/EMAIL/consents")
+    private String createConsentByConsentRequestIdEmail;
+    
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
     private String getConsentAuthorisation;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
@@ -144,7 +150,17 @@ public class ConsentController {
                         String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                         model.addAttribute("client_url",clientUrl);
                     }
-                } else {
+                } else if(apiStandard.equalsIgnoreCase("OBP")) {
+                    model.addAttribute("accounts", accounts.getBody().getAllAccounts());
+                    session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
+                    session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
+                    session.setAttribute("all_accounts_id_to_iban", accounts.getBody().getIdtoIbanMap());
+                    if(ArrayUtils.isEmpty(accounts.getBody().getIbanAccounts())) {
+                        String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
+                        model.addAttribute("client_url",clientUrl);
+                    }
+                } 
+                else {
                     model.addAttribute("accounts", accounts.getBody().getAccounts());
                     session.setAttribute("all_account_ids", accounts.getBody().accountIds());
                     if(ArrayUtils.isEmpty(accounts.getBody().getAccounts())) {
@@ -180,16 +196,31 @@ public class ConsentController {
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
             model.addAttribute("bankLogoUrl", bankLogoUrl);
+            String apiStandard = (String) session.getAttribute("api_standard");
             HttpHeaders headers = buildDirectLoginHeader(session);
             String consentId = (String) session.getAttribute("consent_id");
-            String authorizationId = (String) session.getAttribute("authorizationId");
-            String url = updateConsentsPsuData.replace("CONSENT_ID", consentId)
-                    .replace("AUTHORISATION_ID", authorizationId);
             Map<String, String> body2 = new HashMap<>();
-            body2.put("scaAuthenticationData", password);
+            String url = "";
+            HttpMethod method = HttpMethod.PUT;
+            if(apiStandard.equalsIgnoreCase("BerlinGroup")){
+                body2.put("scaAuthenticationData", password);
+                String authorizationId = (String) session.getAttribute("authorizationId");
+                url = updateConsentsPsuData.replace("CONSENT_ID", consentId)
+                        .replace("AUTHORISATION_ID", authorizationId);
+                method = HttpMethod.PUT;
+            } else if(apiStandard.equalsIgnoreCase("OBP")) {
+                body2.put("answer", password);
+                String bankId = (String) session.getAttribute("bank_id");
+                url = answerConsentChallenge.replace("CONSENT_ID", consentId)
+                        .replace("BANK_ID", bankId);
+                method = HttpMethod.POST;
+                
+            } else {
+                //
+            }
             HttpEntity<Map<String, String>> entity2 = new HttpEntity<>(body2, headers);
             try {
-                ResponseEntity<Map> response2 = restTemplate.exchange(url, HttpMethod.PUT, entity2, Map.class);
+                ResponseEntity<Map> response2 = restTemplate.exchange(url, method, entity2, Map.class);
                 String redirect = (String) session.getAttribute("acceptConsentResponse.getRedirectTo()");
                 logger.info("redirect:" + redirect);
                 return "redirect:" + redirect;
@@ -291,6 +322,15 @@ public class ConsentController {
                 String[] parts = scaStatus.split("authorisations/");
                 String authorizationId = parts[1];
                 session.setAttribute("authorizationId", authorizationId);
+            } else if(apiStandard.equalsIgnoreCase("OBP")){
+                // Create Consent
+                String consentRequestId = (String) session.getAttribute("consent_request_id");
+                Map<String, String> body2 = new HashMap<>();
+                HttpEntity<Map<String, String>> entity = new HttpEntity<>(body2, headers);
+                String url = createConsentByConsentRequestIdEmail
+                        .replace("CONSENT_REQUEST_ID", consentRequestId);
+                ResponseEntity<Map> responseCreateConsent = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+                session.setAttribute("consent_id", responseCreateConsent.getBody().get("consent_id"));
             } else {
                 { // process selected accounts
                     AccessToViewRequest body = new AccessToViewRequest(selectedObpScopes);
@@ -386,6 +426,11 @@ public class ConsentController {
                 ArrayList<String> list = (ArrayList<String>)authorizationIds.getBody().get("authorisationIds");
                 model.addAttribute("authorization_ids",  String.join(", ", list));
                 
+                model.addAttribute("consent_challenge", consent_challenge);
+                session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
+                logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
+                return "sca_modal";
+            } else if(apiStandard.equalsIgnoreCase("OBP")){
                 model.addAttribute("consent_challenge", consent_challenge);
                 session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
                 logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());

@@ -92,6 +92,7 @@ public class LoginController implements ServletContextAware {
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
             String requestUrl = loginRequest.getRequestUrl();
+            String consentRequestId = getConsentRequestId(requestUrl);
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
             if(consentId.equalsIgnoreCase("Utility-List-Consents")) {
@@ -132,7 +133,7 @@ public class LoginController implements ServletContextAware {
 //            }
 
                 try {
-                    if(!apiStandard.equalsIgnoreCase("BerlinGroup"))
+                    if(apiStandard.equalsIgnoreCase("UKOpenBanking"))
                     {// validate consentId
                         Map<String, Object> responseBody = idVerifier.apply(getConsentUrl.replace("CONSENT_ID", consentId));
                         Map<String, Object> data = ((Map<String, Object>) responseBody.get("Data"));
@@ -155,6 +156,7 @@ public class LoginController implements ServletContextAware {
                     return "error";
                 }
 
+                session.setAttribute("consent_request_id", consentRequestId);
                 session.setAttribute("consent_id", consentId);
                 session.setAttribute("bank_id", bankId);
                 session.setAttribute("iban", iban);
@@ -237,6 +239,7 @@ public class LoginController implements ServletContextAware {
 
     }
 
+    private static final Pattern CONSENT_REQUEST_ID_PATTERN = Pattern.compile(".*?consent_request_id=([^&$]*).*");
     private static final Pattern CONSENT_ID_PATTERN = Pattern.compile(".*?consent_id=([^&$]*).*");
     private static final Pattern BANK_ID_PATTERN = Pattern.compile(".*?bank_id=([^&$]*).*");
     private static final Pattern IBAN_PATTERN = Pattern.compile(".*?iban=([^&$]*).*");
@@ -252,6 +255,19 @@ public class LoginController implements ServletContextAware {
      */
     private String getConsentId(String authRequestUrl) {
         Matcher matcher = CONSENT_ID_PATTERN.matcher(authRequestUrl);
+        if(matcher.matches()) {
+           return matcher.replaceFirst("$1");
+        } else {
+            return null;
+        }
+    }
+    /**
+     * get consent_id query parameter from auth request url
+     * @param authRequestUrl
+     * @return
+     */
+    private String getConsentRequestId(String authRequestUrl) {
+        Matcher matcher = CONSENT_REQUEST_ID_PATTERN.matcher(authRequestUrl);
         if(matcher.matches()) {
            return matcher.replaceFirst("$1");
         } else {

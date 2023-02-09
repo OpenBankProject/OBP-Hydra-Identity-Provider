@@ -21,6 +21,10 @@ public class Accounts {
         Stream<AccountMini> result = Stream.of(accounts).filter(x -> otherList.contains(x.getIban()));
         return result.toArray(AccountMini[]::new);
     }
+    public AccountMini[] getAllAccounts() {
+        Stream<AccountMini> result = Stream.of(accounts);
+        return result.toArray(AccountMini[]::new);
+    }
 
     public void setAccounts(AccountMini[] accounts) {
         this.accounts = accounts;
