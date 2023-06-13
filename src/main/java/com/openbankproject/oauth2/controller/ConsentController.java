@@ -68,6 +68,9 @@ public class ConsentController {
     @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/EMAIL/consents")
     private String createConsentByConsentRequestIdEmail;
     
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/IMPLICIT/consents")
+    private String createConsentByConsentRequestIdImplicit;
+    
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
     private String getConsentAuthorisation;
     @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
@@ -327,7 +330,7 @@ public class ConsentController {
                 String consentRequestId = (String) session.getAttribute("consent_request_id");
                 Map<String, String> body2 = new HashMap<>();
                 HttpEntity<Map<String, String>> entity = new HttpEntity<>(body2, headers);
-                String url = createConsentByConsentRequestIdEmail
+                String url = createConsentByConsentRequestIdImplicit
                         .replace("CONSENT_REQUEST_ID", consentRequestId);
                 ResponseEntity<Map> responseCreateConsent = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
                 session.setAttribute("consent_id", responseCreateConsent.getBody().get("consent_id"));
