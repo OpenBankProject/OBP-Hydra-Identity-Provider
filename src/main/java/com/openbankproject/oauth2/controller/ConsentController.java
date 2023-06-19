@@ -133,7 +133,7 @@ public class ConsentController {
                 HttpHeaders headers = buildDirectLoginHeader(session);
                 HttpEntity<String> entity = new HttpEntity<>(headers);
                 ResponseEntity<ConsentsInfo> consents = restTemplate.exchange(getConsentsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, ConsentsInfo.class);
-                model.addAttribute("consents", consents.getBody().getConsents("BG", "REVOKED"));
+                model.addAttribute("consents", consents.getBody().getConsents());
                 return "consents";
             }
 
