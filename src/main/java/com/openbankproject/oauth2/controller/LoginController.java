@@ -95,6 +95,13 @@ public class LoginController implements ServletContextAware {
             String consentRequestId = getConsentRequestId(requestUrl);
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
+
+            // OpenID Connect Flow
+            if(consentId == null) {
+                logger.info("OpenID Connect Flow");
+                return "redirect:" + obpBaseUrl + "/user_mgt/login?login_challenge=" + login_challenge;
+            }
+            
             if(consentId.equalsIgnoreCase("Utility-List-Consents")) {
                 session.setAttribute("consent_id", consentId);
                 session.setAttribute("bank_id", bankId);

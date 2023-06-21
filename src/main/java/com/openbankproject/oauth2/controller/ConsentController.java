@@ -126,9 +126,16 @@ public class ConsentController {
                 model.addAttribute("errorMsg", "consent_challenge is wrong!");
                 return "error";
             }
-
+            
             String bankId = (String) session.getAttribute("bank_id");
             String consentId = (String) session.getAttribute("consent_id");
+            
+            // OpenID Connect Flow
+            if(consentId == null) {
+                logger.info("OpenID Connect Flow");
+                return "redirect:" + obpBaseUrl + "/consent-screen?consent_challenge=" + consent_challenge;
+            }
+            
             if(consentId.equalsIgnoreCase("Utility-List-Consents")) {
                 HttpHeaders headers = buildDirectLoginHeader(session);
                 HttpEntity<String> entity = new HttpEntity<>(headers);
