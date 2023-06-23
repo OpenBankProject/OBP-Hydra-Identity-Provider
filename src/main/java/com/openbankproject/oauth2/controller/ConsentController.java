@@ -65,6 +65,9 @@ public class ConsentController {
     @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/consents/CONSENT_ID/challenge")
     private String answerConsentChallenge;
     
+    @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID")
+    private String getConsentRequest;
+    
     @Value("${obp.base_url}/obp/v5.1.0/consumer/consent-requests/CONSENT_REQUEST_ID/EMAIL/consents")
     private String createConsentByConsentRequestIdEmail;
     
@@ -144,6 +147,9 @@ public class ConsentController {
                 return "consents";
             }
 
+            String[] consents = consentRequest.getRequestedScope().stream()
+                    .filter(it -> !it.equals("openid") && !it.equals("offline"))
+                    .toArray(String[]::new);
             { // prepare account list
                 String apiStandard = (String) session.getAttribute("api_standard");
                 model.addAttribute("apiStandard", apiStandard);
@@ -161,6 +167,18 @@ public class ConsentController {
                         model.addAttribute("client_url",clientUrl);
                     }
                 } else if(apiStandard.equalsIgnoreCase("OBP")) {
+
+                    // Get consent info
+                    String consentRequestId = (String) session.getAttribute("consent_request_id");
+                    ResponseEntity<Map> consentInfo = restTemplate.exchange(getConsentRequest.replace("CONSENT_REQUEST_ID", consentRequestId), HttpMethod.GET, entity, Map.class);
+                    Map<String, Boolean> payload = (Map<String, Boolean>) consentInfo.getBody().get("payload");
+                    Boolean everything = (Boolean)payload.get("everything");
+                    if(everything) {
+                        ArrayList<String> arrayList = new ArrayList<String>(Arrays.asList(consents));
+                        arrayList.add("everything");
+                        consents = arrayList.toArray(consents);
+                    }
+                    
                     model.addAttribute("accounts", accounts.getBody().getAllAccounts());
                     session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
                     session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
@@ -179,9 +197,7 @@ public class ConsentController {
                     }
                 }
             }
-            String[] consents = consentRequest.getRequestedScope().stream()
-                    .filter(it -> !it.equals("openid") && !it.equals("offline"))
-                    .toArray(String[]::new);
+            
             model.addAttribute("consents", consents);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
