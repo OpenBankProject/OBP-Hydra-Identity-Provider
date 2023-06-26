@@ -92,6 +92,7 @@ public class LoginController implements ServletContextAware {
         try {
             LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
             String requestUrl = loginRequest.getRequestUrl();
+            logger.debug("requestUrl: " + loginRequest.getRequestUrl());
             String consentRequestId = getConsentRequestId(requestUrl);
             String consentId = getConsentId(requestUrl);
             String bankId = getBankId(requestUrl);
