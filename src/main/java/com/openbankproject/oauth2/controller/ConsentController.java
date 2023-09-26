@@ -407,14 +407,19 @@ public class ConsentController {
 
             final OAuth2Client client = consentRequest.getClient();
             final Map<String, String> metadata = ((Map<String, String>) client.getMetadata());
-            String x5tS256 = null;
+             String x5tS256 = null;
             if(metadata != null && metadata.get("client_certificate") != null) {
-                logger.debug("client_certificate: " + metadata.get("client_certificate"));
-                String pem = metadata.get("client_certificate");
-                if(decodePem == true) {
-                    pem = URLDecoder.decode(pem,"UTF-8");
-                }
-                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(pem)).toString();
+            logger.debug("client_certificate: " + metadata.get("client_certificate"));
+            String pem = metadata.get("client_certificate");
+            if(decodePem == true) {
+            logger.debug("decodePem is true. I will decode the pem now.");
+            pem = URLDecoder.decode(pem,"UTF-8");
+            }
+            logger.debug("before parsing pem");
+            String parsedPem = X509CertUtils.parse(pem);
+            logger.debug("before computing SHA256 thumbprint using parsedPem");
+
+            x5tS256 = X509CertUtils.computeSHA256Thumbprint(parsedPem).toString();
             }
 
             final String state = getState(consentRequest.getRequestUrl());
