@@ -31,6 +31,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,9 +89,6 @@ public class ConsentController {
 
     @Value("${obp.base_url:#}")
     private String obpBaseUrl;
-    
-    @Value("${pem.decode.enabled:true}")
-    private Boolean decodePem;
 
     @Resource
     private RestTemplate restTemplate;
@@ -412,12 +410,15 @@ public class ConsentController {
             if(metadata != null && metadata.get("client_certificate") != null) {
                 logger.debug("client_certificate: " + metadata.get("client_certificate"));
                 String pem = metadata.get("client_certificate");
-                if(decodePem == true) {
-                    logger.debug("decodePem is true. I will decode the pem now.");
-                    pem = URLDecoder.decode(pem,"UTF-8");
-                }
+                String decodedPem = URLDecoder.decode(pem,"UTF-8");
                 logger.debug("before computing SHA256 thumbprint using parsedPem");
-                x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(pem)).toString();
+                if(X509CertUtils.parse(pem) == null) {
+                    logger.debug("Use a decoded pem");
+                    x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(decodedPem)).toString();
+                } else {
+                    logger.debug("Use a pem");
+                    x5tS256 = X509CertUtils.computeSHA256Thumbprint(X509CertUtils.parse(pem)).toString();
+                }
             }
 
             final String state = getState(consentRequest.getRequestUrl());

@@ -12,7 +12,6 @@ spring.thymeleaf.servlet.content-type=text/html;
 oauth2.admin_url=https://path/to/hydra-private
 
 show_unhandled_errors=true
-pem.decode.enabled=false
 
 obp.base_url=https://apisandbox.openbankproject.com
 endpoint.path.prefix=${obp.base_url}/open-banking/v3.1
