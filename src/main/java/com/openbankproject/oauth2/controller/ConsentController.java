@@ -338,6 +338,7 @@ public class ConsentController {
                 // Start consent authorization
                 String consentId = (String) session.getAttribute("consent_id");
                 Map<String, String> body2 = new HashMap<>();
+                body2.put("scaAuthenticationData", "");
                 HttpEntity<Map<String, String>> entity = new HttpEntity<>(body2, headers);
                 String url = startConsentAuthorisation.replace("CONSENT_ID", consentId);
                 ResponseEntity<Map> response1 = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
