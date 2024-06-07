@@ -31,7 +31,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,7 +46,7 @@ public class ConsentController {
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/consents/CONSENT_ID")
     private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
-    private String getAccountsUrl;
+    private String getAccountsHeldUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents")
     private String createBerlinGroupConsentsUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/my/consents")
@@ -153,14 +152,14 @@ public class ConsentController {
                 model.addAttribute("apiStandard", apiStandard);
                 HttpHeaders headers = buildDirectLoginHeader(session);
                 HttpEntity<String> entity = new HttpEntity<>(headers);
-                ResponseEntity<Accounts> accounts = restTemplate.exchange(getAccountsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
+                ResponseEntity<Accounts> accountsHeld = restTemplate.exchange(getAccountsHeldUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, Accounts.class);
                 if(apiStandard.equalsIgnoreCase("BerlinGroup")) {
                     String[] ibans = ((String) session.getAttribute("iban")).split(",");
-                    model.addAttribute("accounts", accounts.getBody().getIbanAccounts(ibans));
-                    session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
-                    session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
-                    session.setAttribute("all_accounts_id_to_iban", accounts.getBody().getIdtoIbanMap());
-                    if(ArrayUtils.isEmpty(accounts.getBody().getIbanAccounts())) {
+                    model.addAttribute("accounts", accountsHeld.getBody().getIbanAccounts(ibans));
+                    session.setAttribute("all_account_ids", accountsHeld.getBody().accountIdsWithIban());
+                    session.setAttribute("all_account_ibans", accountsHeld.getBody().getIbans());
+                    session.setAttribute("all_accounts_id_to_iban", accountsHeld.getBody().getIdtoIbanMap());
+                    if(ArrayUtils.isEmpty(accountsHeld.getBody().getIbanAccounts())) {
                         String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                         model.addAttribute("client_url",clientUrl);
                     }
@@ -177,19 +176,19 @@ public class ConsentController {
                         consents = arrayList.toArray(consents);
                     }
                     
-                    model.addAttribute("accounts", accounts.getBody().getAllAccounts());
-                    session.setAttribute("all_account_ids", accounts.getBody().accountIdsWithIban());
-                    session.setAttribute("all_account_ibans", accounts.getBody().getIbans());
-                    session.setAttribute("all_accounts_id_to_iban", accounts.getBody().getIdtoIbanMap());
-                    if(ArrayUtils.isEmpty(accounts.getBody().getIbanAccounts())) {
+                    model.addAttribute("accounts", accountsHeld.getBody().getAllAccounts());
+                    session.setAttribute("all_account_ids", accountsHeld.getBody().accountIdsWithIban());
+                    session.setAttribute("all_account_ibans", accountsHeld.getBody().getIbans());
+                    session.setAttribute("all_accounts_id_to_iban", accountsHeld.getBody().getIdtoIbanMap());
+                    if(ArrayUtils.isEmpty(accountsHeld.getBody().getIbanAccounts())) {
                         String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                         model.addAttribute("client_url",clientUrl);
                     }
                 } 
                 else {
-                    model.addAttribute("accounts", accounts.getBody().getAccounts());
-                    session.setAttribute("all_account_ids", accounts.getBody().accountIds());
-                    if(ArrayUtils.isEmpty(accounts.getBody().getAccounts())) {
+                    model.addAttribute("accounts", accountsHeld.getBody().getAccounts());
+                    session.setAttribute("all_account_ids", accountsHeld.getBody().accountIds());
+                    if(ArrayUtils.isEmpty(accountsHeld.getBody().getAccounts())) {
                         String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                         model.addAttribute("client_url",clientUrl);
                     }
