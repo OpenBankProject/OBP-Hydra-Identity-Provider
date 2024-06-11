@@ -2,6 +2,7 @@ package com.openbankproject.oauth2.controller;
 
 import com.nimbusds.jose.util.X509CertUtils;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
+import com.openbankproject.oauth2.model.AccountMini;
 import com.openbankproject.oauth2.model.Accounts;
 import com.openbankproject.oauth2.model.ConsentsInfo;
 import org.apache.commons.lang3.ArrayUtils;
@@ -164,23 +165,40 @@ public class ConsentController {
                         model.addAttribute("client_url",clientUrl);
                     }
                 } else if(apiStandard.equalsIgnoreCase("OBP")) {
-
                     // Get consent info
                     String consentRequestId = (String) session.getAttribute("consent_request_id");
                     ResponseEntity<Map> consentInfo = restTemplate.exchange(getConsentRequest.replace("CONSENT_REQUEST_ID", consentRequestId), HttpMethod.GET, entity, Map.class);
                     Map<String, Boolean> payload = (Map<String, Boolean>) consentInfo.getBody().get("payload");
                     Boolean everything = (Boolean)payload.get("everything");
+                    List<AccountMini> accountMinis = new ArrayList<>();
                     if(everything) {
                         ArrayList<String> arrayList = new ArrayList<String>(Arrays.asList(consents));
                         arrayList.add("everything");
                         consents = arrayList.toArray(consents);
+                        accountMinis.addAll(Arrays.asList(accountsHeld.getBody().getAllAccounts()));
+                        model.addAttribute("accounts", accountMinis);
+                    } 
+                    else {
+                        ArrayList<String> arrayList = new ArrayList<String>(Arrays.asList(consents));
+                        Map<String, Object> consentInfoResponse = (Map<String, Object>) consentInfo.getBody().get("payload");
+                        consentInfoResponse.forEach((key,val) -> { if(key == "account_access") arrayList.add(val.toString()); });
+                        consentInfoResponse.forEach((key,val) -> {
+                            if(key == "account_access") {
+                                List<Object> accountAccesses = ((ArrayList) val);
+                                accountAccesses.forEach( (v) -> {
+                                    Map<String, Object> accountAccess = (Map<String, Object>) v;
+                                        Map<String, Object> accountRouting = (Map<String, Object>) accountAccess.get("account_routing");
+                                        String scheme = (String) accountRouting.get("scheme");
+                                        String address = (String) accountRouting.get("address");
+                                        accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)));;
+                                });
+                            };
+                        });
+                        consents = arrayList.toArray(consents);
+                        model.addAttribute("accounts", accountMinis);
                     }
-                    
-                    model.addAttribute("accounts", accountsHeld.getBody().getAllAccounts());
-                    session.setAttribute("all_account_ids", accountsHeld.getBody().accountIdsWithIban());
-                    session.setAttribute("all_account_ibans", accountsHeld.getBody().getIbans());
-                    session.setAttribute("all_accounts_id_to_iban", accountsHeld.getBody().getIdtoIbanMap());
-                    if(ArrayUtils.isEmpty(accountsHeld.getBody().getIbanAccounts())) {
+
+                    if(accountMinis.isEmpty()) {
                         String clientUrl = consentRequest.getClient().getRedirectUris().get(0);
                         model.addAttribute("client_url",clientUrl);
                     }
