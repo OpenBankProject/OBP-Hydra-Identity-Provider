@@ -48,8 +48,6 @@ public class ConsentController {
     private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsHeldUrl;
-    @Value("${obp.base_url}/berlin-group/v1.3/consents")
-    private String createBerlinGroupConsentsUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/my/consents")
     private String getConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
