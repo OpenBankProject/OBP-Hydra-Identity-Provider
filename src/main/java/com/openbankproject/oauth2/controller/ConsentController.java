@@ -169,7 +169,7 @@ public class ConsentController {
                     Map<String, Boolean> payload = (Map<String, Boolean>) consentInfo.getBody().get("payload");
                     Boolean everything = (Boolean)payload.get("everything");
                     List<AccountMini> accountMinis = new ArrayList<>();
-                    if(everything) {
+                    if(everything != null && everything) { // VRP Consent Request does not contain the "everything" field
                         ArrayList<String> arrayList = new ArrayList<String>(Arrays.asList(consents));
                         arrayList.add("everything");
                         consents = arrayList.toArray(consents);
