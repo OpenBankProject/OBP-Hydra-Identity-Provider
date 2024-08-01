@@ -181,7 +181,8 @@ public class ConsentController {
                         Map<String, Object> consentInfoResponse = (Map<String, Object>) consentInfo.getBody().get("payload");
                         consentInfoResponse.forEach((key,val) -> { if(key == "account_access") arrayList.add(val.toString()); });
                         consentInfoResponse.forEach((key,val) -> {
-                            if(key == "account_access") {
+                            // Handle Consent Request case
+                            if(key == "account_access") { 
                                 List<Object> accountAccesses = ((ArrayList) val);
                                 accountAccesses.forEach( (v) -> {
                                     Map<String, Object> accountAccess = (Map<String, Object>) v;
@@ -189,6 +190,18 @@ public class ConsentController {
                                         String scheme = (String) accountRouting.get("scheme");
                                         String address = (String) accountRouting.get("address");
                                         accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)));;
+                                });
+                            };
+                            // Handle Consent Request VRP case
+                            if(key == "from_account") { 
+                                Map<String, Object>  fromAccount = (Map<String, Object>) val;
+                                fromAccount.forEach( (k, v) -> {
+                                    if(k == "account_routing") {
+                                        Map<String, Object> accountRouting = (Map<String, Object>) v;
+                                        String scheme = (String) accountRouting.get("scheme");
+                                        String address = (String) accountRouting.get("address");
+                                        accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)));;
+                                    }
                                 });
                             };
                         });
