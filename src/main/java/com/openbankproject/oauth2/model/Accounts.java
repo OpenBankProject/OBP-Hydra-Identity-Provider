@@ -35,6 +35,12 @@ public class Accounts {
         );
         return result.toArray(AccountMini[]::new);
     }
+    public AccountMini[] filterByAccountId(String accountId) {
+        Stream<AccountMini> result = Stream.of(accounts).filter(
+                x -> Stream.of(x.getId()).anyMatch(id -> id.equalsIgnoreCase(accountId))
+        );
+        return result.toArray(AccountMini[]::new);
+    }
 
     public void setAccounts(AccountMini[] accounts) {
         this.accounts = accounts;

@@ -200,7 +200,12 @@ public class ConsentController {
                                         Map<String, Object> accountRouting = (Map<String, Object>) v;
                                         String scheme = (String) accountRouting.get("scheme");
                                         String address = (String) accountRouting.get("address");
-                                        accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)));;
+                                        if(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)).isEmpty()) {
+                                            // Assume that address value is OBP-API Account ID
+                                            accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByAccountId(address)));
+                                        } else {
+                                            accountMinis.addAll(Arrays.asList(accountsHeld.getBody().filterByRouting(scheme, address)));
+                                        }
                                     }
                                 });
                             };
