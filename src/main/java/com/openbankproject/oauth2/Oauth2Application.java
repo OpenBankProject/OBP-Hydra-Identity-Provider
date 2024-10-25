@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 import static com.openbankproject.oauth2.util.ControllerUtils.buildDirectLoginHeader;
 
 @SpringBootApplication
+@ComponentScan(basePackages = "com.openbankproject")  // Ensure this package is scanned
 public class Oauth2Application {
     private static final Logger logger = LoggerFactory.getLogger(Oauth2Application.class);
     

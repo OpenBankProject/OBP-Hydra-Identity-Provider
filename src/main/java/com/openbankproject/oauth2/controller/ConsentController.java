@@ -1,6 +1,7 @@
 package com.openbankproject.oauth2.controller;
 
 import com.nimbusds.jose.util.X509CertUtils;
+import com.openbankproject.RedisService;
 import com.openbankproject.oauth2.model.AccessToViewRequest;
 import com.openbankproject.oauth2.model.AccountMini;
 import com.openbankproject.oauth2.model.Accounts;
@@ -9,6 +10,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -94,6 +96,9 @@ public class ConsentController {
     private AdminApi adminApi;
 
     private String idTokenSignHashAlg;
+
+    @Autowired
+    private RedisService redisService;
 
     @PostConstruct
     private void initiate() {
@@ -228,7 +233,8 @@ public class ConsentController {
                     }
                 }
             }
-            
+
+            redisService.readLogFromRedis(session, model);
             model.addAttribute("consents", consents);
             model.addAttribute("showBankLogo", showBankLogo);
             model.addAttribute("obpBaseUrl", obpBaseUrl);
@@ -280,6 +286,9 @@ public class ConsentController {
                 ResponseEntity<Map> response2 = restTemplate.exchange(url, method, entity2, Map.class);
                 String redirect = (String) session.getAttribute("acceptConsentResponse.getRedirectTo()");
                 logger.info("redirect:" + redirect);
+
+                redisService.readLogFromRedis(session, model);
+
                 return "redirect:" + redirect;
             } catch (Exception e) {
                 String error = "Sorry! The one time password (OTP) you supplied is incorrect.";
@@ -294,8 +303,8 @@ public class ConsentController {
             return "error";
         }
     }
-    
-    
+
+
     @PostMapping(value="/revoke_consents", params = "consent_challenge")
     public String revokeConsents(@RequestParam String consent_challenge,
                                      @RequestParam(value="consents", required = false) String[] consentIds,
@@ -325,6 +334,7 @@ public class ConsentController {
             return "error";
         }
         model.addAttribute("errorMsg", "All selected consents have been deleted!");
+        redisService.readLogFromRedis(session, model);
         return "error";
     }
     
@@ -489,7 +499,9 @@ public class ConsentController {
                 ResponseEntity<Map> authorizationIds = restTemplate.exchange(getConsentAuthorisation.replace("CONSENT_ID", consentId), HttpMethod.GET, entity, Map.class);
                 ArrayList<String> list = (ArrayList<String>)authorizationIds.getBody().get("authorisationIds");
                 model.addAttribute("authorization_ids",  String.join(", ", list));
-                
+
+                redisService.readLogFromRedis(session, model);
+
                 model.addAttribute("consent_challenge", consent_challenge);
                 session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
                 logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
@@ -498,8 +510,13 @@ public class ConsentController {
                 model.addAttribute("consent_challenge", consent_challenge);
                 session.setAttribute("acceptConsentResponse.getRedirectTo()", acceptConsentResponse.getRedirectTo());
                 logger.info("acceptConsentResponse.getRedirectTo():" + acceptConsentResponse.getRedirectTo());
+
+                redisService.readLogFromRedis(session, model);
+
                 return "sca_modal";
             } else {
+                redisService.readLogFromRedis(session, model);
+
                 return "redirect:" + acceptConsentResponse.getRedirectTo();
             }
         } catch (Exception unhandledException) {

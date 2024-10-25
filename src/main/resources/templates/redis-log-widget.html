@@ -1,0 +1,15 @@
+<!-- redis-log-widget.html -->
+<div th:fragment="redisLogWidget">
+    <hr>
+    <div class="text-center">
+        <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#logEntriesContent" aria-expanded="false" aria-controls="logEntriesContent">
+            Show/Hide log of Hydra Identity Provider app
+        </button>
+    </div>
+    <div class="collapse mt-3" id="logEntriesContent">
+        <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${logEntriesForHtml}">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <span id="log_entries_msg" th:utext="${logEntriesForHtml}" style="white-space: pre-wrap;">Not implemented</span>
+        </div>
+    </div>
+</div>

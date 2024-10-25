@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import com.openbankproject.RedisService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +18,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +43,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -120,24 +123,78 @@ public class RestTemplateConfig {
 
     private String getSessionId() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
+        if (attributes != null && attributes.getRequest() != null && attributes.getRequest().getSession(false) != null ) {
             return attributes.getRequest().getSession(false).getId();  // Get the existing session, don't create a new one
         }
         return "";
     }
+    
+    @Autowired
+    private RedisService redisService;
+
+    public String printUtcDateTime() {
+        Instant now = Instant.now();
+        return "at UTC Time: " + now.toString();
+    }
+
+    private StringBuilder saveRequestInfoToRedis(HttpRequest request, String body) {
+        System.out.println("Saving to Redis...");
+        StringBuilder logEntry = buildRequestInfo(request, body);
+        String key = "log-entry-for-session-id: " + getSessionId();
+        String value = logEntry.toString();
+        redisService.appendWithTTL(key, value, 300);
+        return logEntry;
+    }
+
+    private StringBuilder buildRequestInfo(HttpRequest request, String body) {
+        StringBuilder logEntry = new StringBuilder();
+        logEntry.append("============= Request begin " + printUtcDateTime() + " =============\n")
+                .append("=== Session ID: ").append(getSessionId()).append("\n")
+                .append("=== Status Line : ").append(request.getRequestLine()).append("\n")
+                .append("=== Headers : ").append(StringUtils.join(request.getAllHeaders(), "; ")).append("\n")
+                .append("=== Request body: ").append(body).append("\n")
+                .append("============= Request end " + printUtcDateTime() + " =============\n");
+        return logEntry;
+    }
+
+    private StringBuilder saveResponseInfoTRedis(HttpResponse response, String body) {
+        System.out.println("Saving to Redis...");
+        StringBuilder logEntry = buildResponseInfo(response, body);
+        String key = "log-entry-for-session-id: " + getSessionId();
+        String value = logEntry.toString();
+        redisService.appendWithTTL(key, value, 300);
+        return logEntry;
+    }
+
+    private StringBuilder buildResponseInfo(HttpResponse response, String body) {
+        StringBuilder logEntry = new StringBuilder();
+        logEntry.append("============= Response begin " + printUtcDateTime() + " =============\n")
+                .append("=== Session ID: ").append(getSessionId()).append("\n")
+                .append("=== Status Line : ").append(response.getStatusLine()).append("\n")
+                .append("=== Headers : ").append(StringUtils.join(response.getAllHeaders(), "; ")).append("\n")
+                .append("=== Response body: ").append(body).append("\n")
+                .append("============= Response end " + printUtcDateTime() + " =============\n");
+        return logEntry;
+    }
     private void traceRequest(HttpRequest request, String body) throws IOException {
+        // Standard output
         logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
         logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
+        // Save to Redis
+        saveRequestInfoToRedis(request, body).toString();
     }
     private void traceResponse(HttpResponse response, String body) throws IOException {
+        // Standard output
         logger.info("=========================== response begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Status Line : {}, Session ID : {}", response.getStatusLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(response.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Response body: {}, Session ID : {}", body, getSessionId());
         logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
+        // Save to Redis
+        saveResponseInfoTRedis(response, body);
     }
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
         HttpRequest req = (HttpRequest)httpContext.getAttribute("http.request");
