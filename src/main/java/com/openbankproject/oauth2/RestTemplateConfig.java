@@ -138,11 +138,10 @@ public class RestTemplateConfig {
     }
 
     private StringBuilder saveRequestInfoToRedis(HttpRequest request, String body) {
-        System.out.println("Saving to Redis...");
         StringBuilder logEntry = buildRequestInfo(request, body);
         String key = "log-entry-for-session-id: " + getSessionId();
         String value = logEntry.toString();
-        redisService.appendWithTTL(key, value, 300);
+        redisService.saveLogToRedis(key, value);
         return logEntry;
     }
 
@@ -158,11 +157,10 @@ public class RestTemplateConfig {
     }
 
     private StringBuilder saveResponseInfoTRedis(HttpResponse response, String body) {
-        System.out.println("Saving to Redis...");
         StringBuilder logEntry = buildResponseInfo(response, body);
         String key = "log-entry-for-session-id: " + getSessionId();
         String value = logEntry.toString();
-        redisService.appendWithTTL(key, value, 300);
+        redisService.saveLogToRedis(key, value);
         return logEntry;
     }
 

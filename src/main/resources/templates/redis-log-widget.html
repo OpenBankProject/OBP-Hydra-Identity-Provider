@@ -6,10 +6,16 @@
             Show/Hide log of Hydra Identity Provider app
         </button>
     </div>
+    <br>
     <div class="collapse mt-3" id="logEntriesContent">
-        <div class="alert alert-info alert-dismissible col-md-12" role="alert" th:if="${logEntriesForHtml}">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <span id="log_entries_msg" th:utext="${logEntriesForHtml}" style="white-space: pre-wrap;">Not implemented</span>
+        <div th:if="${logEntriesForHtml}">
+            <!-- Iterate over each log entry in the list and display it as a dismissible alert -->
+            <div th:each="logEntry : ${logEntriesForHtml}" class="alert alert-info alert-dismissible col-md-12" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <span th:text="${logEntry}" style="white-space: pre-wrap;"></span>
+            </div>
         </div>
     </div>
 </div>
