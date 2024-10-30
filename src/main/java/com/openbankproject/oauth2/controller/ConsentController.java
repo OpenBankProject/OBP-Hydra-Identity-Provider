@@ -75,7 +75,7 @@ public class ConsentController {
     
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
     private String getConsentAuthorisation;
-    @Value("${oauth2.admin_url}/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
+    @Value("${oauth2.admin_url}/admin/keys/${oauth2.broadcast_keys:hydra.jwt.access-token}")
     private String keySetUrl;
     @Value("${show_unhandled_errors:false}")
     private boolean showUnhandledErrors;
