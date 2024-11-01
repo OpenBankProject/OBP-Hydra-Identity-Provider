@@ -19,10 +19,10 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sh.ory.hydra.ApiException;
-import sh.ory.hydra.api.AdminApi;
-import sh.ory.hydra.model.AcceptLoginRequest;
-import sh.ory.hydra.model.CompletedRequest;
-import sh.ory.hydra.model.LoginRequest;
+import sh.ory.hydra.api.OAuth2Api;
+import sh.ory.hydra.model.AcceptOAuth2LoginRequest;
+import sh.ory.hydra.model.OAuth2LoginRequest;
+import sh.ory.hydra.model.OAuth2RedirectTo;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
@@ -55,7 +55,7 @@ public class LoginController implements ServletContextAware {
     private RestTemplate restTemplate;
 
     @Resource
-    private AdminApi hydraAdmin;
+    private OAuth2Api hydraAdmin;
     @Resource
     private Function<String, Map<String, Object>> idVerifier;
 
@@ -90,7 +90,7 @@ public class LoginController implements ServletContextAware {
         model.addAttribute("bankLogoUrl", bankLogoUrl);
 
         try {
-            LoginRequest loginRequest = hydraAdmin.getLoginRequest(login_challenge);
+            OAuth2LoginRequest loginRequest = hydraAdmin.getOAuth2LoginRequest(login_challenge);
             String requestUrl = loginRequest.getRequestUrl();
             logger.debug("requestUrl: " + loginRequest.getRequestUrl());
             String consentRequestId = getConsentRequestId(requestUrl);
@@ -176,9 +176,9 @@ public class LoginController implements ServletContextAware {
             }
             // login before and checked rememberMe.
             if(loginRequest.getSkip() && session.getAttribute("directLoginToken") != null) {
-                AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
+                AcceptOAuth2LoginRequest acceptLoginRequest = new AcceptOAuth2LoginRequest();
                 acceptLoginRequest.setSubject(loginRequest.getSubject());
-                CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
+                OAuth2RedirectTo response = hydraAdmin.acceptOAuth2LoginRequest(login_challenge, acceptLoginRequest);
                 return "redirect:" + response.getRedirectTo();
             } else {
                 return "login";
@@ -219,7 +219,7 @@ public class LoginController implements ServletContextAware {
         try {
             ResponseEntity<DirectLoginResponse> tokenResponse = restTemplate.exchange(directLoginUrl, HttpMethod.POST, entity, DirectLoginResponse.class);
 
-            AcceptLoginRequest acceptLoginRequest = new AcceptLoginRequest();
+            AcceptOAuth2LoginRequest acceptLoginRequest = new AcceptOAuth2LoginRequest();
             acceptLoginRequest.setSubject(username);
             acceptLoginRequest.remember(rememberMe);
 
@@ -230,7 +230,7 @@ public class LoginController implements ServletContextAware {
 
             // rememberMe for 1 hour.
             acceptLoginRequest.rememberFor(3600L);
-            CompletedRequest response = hydraAdmin.acceptLoginRequest(login_challenge, acceptLoginRequest);
+            OAuth2RedirectTo response = hydraAdmin.acceptOAuth2LoginRequest(login_challenge, acceptLoginRequest);
             String directLoginToken = tokenResponse.getBody().getToken();
             session.setAttribute("directLoginToken", directLoginToken);
 

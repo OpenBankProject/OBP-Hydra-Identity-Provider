@@ -19,7 +19,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import sh.ory.hydra.ApiClient;
 import sh.ory.hydra.Configuration;
-import sh.ory.hydra.api.AdminApi;
+import sh.ory.hydra.api.OAuth2Api;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -53,7 +53,7 @@ public class Oauth2Application {
     }
 
     @Bean
-    public AdminApi hydraAdmin(SSLContext sslContext, TrustManager[] trustManagers) {
+    public OAuth2Api hydraAdmin(SSLContext sslContext, TrustManager[] trustManagers) {
         ApiClient defaultClient = Configuration.getDefaultApiClient();
         defaultClient.setBasePath(hydraAdminUrl);
 
@@ -64,7 +64,7 @@ public class Oauth2Application {
                 .addInterceptor(new OkHttpClientLoggingInterceptor())
                 .build();
         defaultClient.setHttpClient(okHttpClient);
-        return new AdminApi(defaultClient);
+        return new OAuth2Api(defaultClient);
     }
 
     public class OkHttpClientLoggingInterceptor implements Interceptor {

@@ -7,8 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import sh.ory.hydra.ApiException;
-import sh.ory.hydra.api.AdminApi;
-import sh.ory.hydra.model.CompletedRequest;
+import sh.ory.hydra.api.OAuth2Api;
+import sh.ory.hydra.model.OAuth2RedirectTo;
 
 import javax.annotation.Resource;
 
@@ -17,14 +17,14 @@ public class LogoutController {
     private static Logger logger = LoggerFactory.getLogger(LogoutController.class);
 
     @Resource
-    private AdminApi hydraAdmin;
+    private OAuth2Api hydraAdmin;
 
     @GetMapping(value={"/logout"}, params = "logout_challenge")
     public String logout(@RequestParam String logout_challenge, Model model) {
         try {
             // validate logout_challenge value
-            this.hydraAdmin.getLogoutRequest(logout_challenge);
-            CompletedRequest completedRequest = hydraAdmin.acceptLogoutRequest(logout_challenge);
+            this.hydraAdmin.getOAuth2LogoutRequest(logout_challenge);
+            OAuth2RedirectTo completedRequest = hydraAdmin.acceptOAuth2LogoutRequest(logout_challenge);
             return "redirect:" + completedRequest.getRedirectTo();
         } catch (ApiException e) {
             logger.error("Logout fail, logout_challenge="+logout_challenge, e);

@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sh.ory.hydra.ApiException;
-import sh.ory.hydra.api.AdminApi;
+import sh.ory.hydra.api.OAuth2Api;
 import sh.ory.hydra.model.*;
 
 import javax.annotation.PostConstruct;
@@ -91,7 +91,7 @@ public class ConsentController {
     @Resource
     private RestTemplate restTemplate;
     @Resource
-    private AdminApi adminApi;
+    private OAuth2Api adminApi;
 
     private String idTokenSignHashAlg;
 
@@ -117,9 +117,9 @@ public class ConsentController {
     public String consentFromHydra(@RequestParam String consent_challenge, HttpSession session, Model model)  {
         try {
             model.addAttribute("consent_challenge", consent_challenge);
-            ConsentRequest consentRequest;
+            OAuth2ConsentRequest consentRequest;
             try { // validate consent_challenge
-                consentRequest = adminApi.getConsentRequest(consent_challenge);
+                consentRequest = adminApi.getOAuth2ConsentRequest(consent_challenge);
             } catch (ApiException e) {
                 logger.error("consent_challenge is wrong!", e);
                 model.addAttribute("errorMsg", "consent_challenge is wrong!");
@@ -302,8 +302,8 @@ public class ConsentController {
                                      @RequestParam(value="deny",required = false) String deny,
                                      HttpSession session, Model model) throws NoSuchAlgorithmException, ApiException {
         if(StringUtils.isNotBlank(deny)) {
-            final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
-            final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
+            final RejectOAuth2Request rejectRequest = new RejectOAuth2Request().error("access_denied").errorDescription("The resource owner denied the request");
+            final OAuth2RedirectTo completedRequest = adminApi.rejectOAuth2ConsentRequest(consent_challenge, rejectRequest);
             return "redirect:" + completedRequest.getRedirectTo();
         }
         if(ArrayUtils.isEmpty(consentIds)) {
@@ -338,8 +338,8 @@ public class ConsentController {
             model.addAttribute("obpBaseUrl", obpBaseUrl);
             model.addAttribute("bankLogoUrl", bankLogoUrl);
             if(StringUtils.isNotBlank(deny)) {
-                final RejectRequest rejectRequest = new RejectRequest().error("access_denied").errorDescription("The resource owner denied the request");
-                final CompletedRequest completedRequest = adminApi.rejectConsentRequest(consent_challenge, rejectRequest);
+                final RejectOAuth2Request rejectRequest = new RejectOAuth2Request().error("access_denied").errorDescription("The resource owner denied the request");
+                final OAuth2RedirectTo completedRequest = adminApi.rejectOAuth2ConsentRequest(consent_challenge, rejectRequest);
                 return "redirect:" + completedRequest.getRedirectTo();
             }
 
@@ -351,9 +351,9 @@ public class ConsentController {
             String bankId = (String) session.getAttribute("bank_id");
             String apiStandard = (String) session.getAttribute("api_standard");
 
-            ConsentRequest consentRequest;
+            OAuth2ConsentRequest consentRequest;
             try {
-                consentRequest = adminApi.getConsentRequest(consent_challenge);
+                consentRequest = adminApi.getOAuth2ConsentRequest(consent_challenge);
             } catch (ApiException e) {
                 logger.error("consent_challenge is wrong!", e);
                 model.addAttribute("errorMsg", "consent_challenge is wrong!");
@@ -433,7 +433,7 @@ public class ConsentController {
 
             String username = consentRequest.getSubject();
 
-            AcceptConsentRequest acceptConsentRequest = new AcceptConsentRequest();
+            AcceptOAuth2ConsentRequest acceptConsentRequest = new AcceptOAuth2ConsentRequest();
             acceptConsentRequest.setGrantScope(requestedScope);
             acceptConsentRequest.setGrantAccessTokenAudience(consentRequest.getRequestedAccessTokenAudience());
 
@@ -457,7 +457,7 @@ public class ConsentController {
 
             final String state = getState(consentRequest.getRequestUrl());
             final String sHash = buildHash(state);
-            ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username, x5tS256, sHash);
+            AcceptOAuth2ConsentRequestSession hydraSession = buildConsentRequestSession(consentId, username, x5tS256, sHash);
             acceptConsentRequest.setSession(hydraSession);
 
             // login before and checked rememberMe.
@@ -465,9 +465,9 @@ public class ConsentController {
                 acceptConsentRequest.setRemember(rememberMe);
                 acceptConsentRequest.setRememberFor(3600L);
             }
-            CompletedRequest acceptConsentResponse = null;
+            OAuth2RedirectTo acceptConsentResponse = null;
             try {
-                acceptConsentResponse = adminApi.acceptConsentRequest(consent_challenge, acceptConsentRequest);
+                acceptConsentResponse = adminApi.acceptOAuth2ConsentRequest(consent_challenge, acceptConsentRequest);
             } catch (ApiException e) {
                 logger.error("Accept consent request fail.", e);
                 model.addAttribute("Accept consent request fail.", "consent_challenge is wrong!");
@@ -510,8 +510,8 @@ public class ConsentController {
         }
     }
 
-    private ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256, String sHash) {
-        ConsentRequestSession hydraSession = new ConsentRequestSession();
+    private AcceptOAuth2ConsentRequestSession buildConsentRequestSession(String consentId, String username, String x5tS256, String sHash) {
+        AcceptOAuth2ConsentRequestSession hydraSession = new AcceptOAuth2ConsentRequestSession();
 
         Map<String, String> x5tS256Map = new HashMap<>();
         x5tS256Map.put("x5t#S256", x5tS256);
