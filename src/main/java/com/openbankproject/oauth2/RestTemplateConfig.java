@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.openbankproject.JwsUtil;
+import com.openbankproject.RedisService;
+import com.openbankproject.RequestResponseLogger;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +49,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.openbankproject.SessionUtils.getSessionId;
+
 @Configuration
 public class RestTemplateConfig {
     private static final Logger logger = LoggerFactory.getLogger(RestTemplateConfig.class);
@@ -62,6 +67,10 @@ public class RestTemplateConfig {
     private char[] trustStorePassword;
     @Value("${force_jws}")
     private String forceJws;
+
+    @Autowired
+    private RequestResponseLogger requestResponseLogger;
+
 
     @Bean
     public RestTemplate restTemplate(SSLContext sslContext) {
@@ -118,26 +127,25 @@ public class RestTemplateConfig {
         }
     }
 
-    private String getSessionId() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes != null) {
-            return attributes.getRequest().getSession(false).getId();  // Get the existing session, don't create a new one
-        }
-        return "";
-    }
     private void traceRequest(HttpRequest request, String body) throws IOException {
+        // Standard output
         logger.info("=========================== request begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Request Line : {}, Session ID : {}", request.getRequestLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(request.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Request body: {}, Session ID : {}", body, getSessionId());
         logger.info("============================= request end ================================================ Session ID : {}", getSessionId());
+        // Save to Redis
+        requestResponseLogger.saveRequestInfoToRedis(request, body).toString();
     }
     private void traceResponse(HttpResponse response, String body) throws IOException {
+        // Standard output
         logger.info("=========================== response begin ================================================ Session ID : {}", getSessionId());
         logger.info("=== Status Line : {}, Session ID : {}", response.getStatusLine(), getSessionId());
         logger.info("=== Headers : {}, Session ID : {}", StringUtils.join(response.getAllHeaders(), "; "), getSessionId());
         logger.info("=== Response body: {}, Session ID : {}", body, getSessionId());
         logger.info("=========================== response end =================================================== Session ID : {}", getSessionId());
+        // Save to Redis
+        requestResponseLogger.saveResponseInfoToRedis(response, body);
     }
     private void responseIntercept(org.apache.http.HttpResponse response, HttpContext httpContext) throws IOException {
         HttpRequest req = (HttpRequest)httpContext.getAttribute("http.request");

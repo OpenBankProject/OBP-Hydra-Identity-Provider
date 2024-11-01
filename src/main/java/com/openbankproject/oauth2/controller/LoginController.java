@@ -1,8 +1,10 @@
 package com.openbankproject.oauth2.controller;
 
+import com.openbankproject.RedisService;
 import com.openbankproject.oauth2.model.DirectLoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +70,10 @@ public class LoginController implements ServletContextAware {
     private String showBankLogo;
     @Value("${logo.bank.url:#}")
     private String bankLogoUrl;
-    
+
+    @Autowired
+    private RedisService redisService;
+
     /**
      * initiate global variable
      * @param servletContext
@@ -179,8 +184,10 @@ public class LoginController implements ServletContextAware {
                 AcceptOAuth2LoginRequest acceptLoginRequest = new AcceptOAuth2LoginRequest();
                 acceptLoginRequest.setSubject(loginRequest.getSubject());
                 OAuth2RedirectTo response = hydraAdmin.acceptOAuth2LoginRequest(login_challenge, acceptLoginRequest);
+                redisService.readLogFromRedis(session, model);
                 return "redirect:" + response.getRedirectTo();
             } else {
+                redisService.readLogFromRedis(session, model);
                 return "login";
             }
         } catch (ApiException e) {
