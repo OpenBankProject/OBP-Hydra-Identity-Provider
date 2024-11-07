@@ -50,7 +50,7 @@ public class ConsentController {
     private String updateConsentStatusUrl;
     @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/accounts-held")
     private String getAccountsHeldUrl;
-    @Value("${obp.base_url}/obp/v4.0.0/banks/BANK_ID/my/consents")
+    @Value("${obp.base_url}/obp/v5.1.0/banks/BANK_ID/my/consents")
     private String getConsentsUrl;
     @Value("${obp.base_url}/berlin-group/v1.3/consents/CONSENT_ID/authorisations")
     private String startConsentAuthorisation;
@@ -145,6 +145,7 @@ public class ConsentController {
                 HttpEntity<String> entity = new HttpEntity<>(headers);
                 ResponseEntity<ConsentsInfo> consents = restTemplate.exchange(getConsentsUrl.replace("BANK_ID", bankId), HttpMethod.GET, entity, ConsentsInfo.class);
                 model.addAttribute("consents", consents.getBody().getConsents());
+                redisService.readLogFromRedis(session, model);
                 return "consents";
             }
 

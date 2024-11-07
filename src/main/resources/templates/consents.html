@@ -32,9 +32,57 @@
                             <div class="checkbox" th:each="consent : ${consents}">
                                 <label>
                                     <input type="checkbox" name="consents" th:value="${consent.consent_id}">
-                                    <span th:text="${consent.consent_id}">Some account</span> - <span th:text="${consent.status}">Some account</span>
+                                    <strong>Consent ID:</strong> <span th:text="${consent.consent_id}"></span><br>
+                                    <strong>Consumer ID:</strong> <span th:text="${consent.consumer_id}"></span><br>
+                                    <strong>Created By User ID:</strong> <span th:text="${consent.created_by_user_id}"></span><br>
+                                    <strong>Status:</strong> <span th:text="${consent.status}"></span><br>
+                                    <strong>Last Action Date:</strong> <span th:text="${consent.last_action_date}"></span><br>
+                                    <strong>Last Usage Date:</strong> <span th:text="${consent.last_usage_date}"></span><br>
+                                    <strong>JWT:</strong> <span th:text="${consent.jwt}"></span><br>
+                                    <strong>API Standard:</strong> <span th:text="${consent.api_standard}"></span><br>
+                                    <strong>API Version:</strong> <span th:text="${consent.api_version}"></span><br>
+
+                                    <hr>
+                                    <!-- JWT Payload Details -->
+                                    <div>
+                                        <strong>JWT Payload:</strong><br>
+                                        <strong>Created By User ID:</strong> <span th:text="${consent.jwt_payload.createdByUserId}"></span><br>
+                                        <strong>Subject:</strong> <span th:text="${consent.jwt_payload.sub}"></span><br>
+                                        <strong>Issuer:</strong> <span th:text="${consent.jwt_payload.iss}"></span><br>
+                                        <strong>Audience:</strong> <span th:text="${consent.jwt_payload.aud}"></span><br>
+                                        <strong>JWT ID:</strong> <span th:text="${consent.jwt_payload.jti}"></span><br>
+                                        <strong>Issued At:</strong> <span th:text="${consent.jwt_payload.iat}"></span><br>
+                                        <strong>Not Before:</strong> <span th:text="${consent.jwt_payload.nbf}"></span><br>
+                                        <strong>Expiration:</strong> <span th:text="${consent.jwt_payload.exp}"></span><br>
+
+                                        <hr>
+                                        <!-- Views List -->
+                                        <div>
+                                            <strong>Views:</strong><br>
+                                            <div th:each="view : ${consent.jwt_payload.views}">
+                                                <strong> - Bank ID:</strong> <span th:text="${view.bank_id}"></span><br>
+                                                <strong> - Account ID:</strong> <span th:text="${view.account_id}"></span><br>
+                                                <strong> - View ID:</strong> <span th:text="${view.view_id}"></span><br>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+                                        <!-- Access List -->
+                                        <div>
+                                            <strong>Access:</strong><br>
+                                            <div th:each="account : ${consent.jwt_payload.access.accounts}">
+                                                <strong> - Account IBAN:</strong> <span th:text="${account.iban}"></span><br>
+                                            </div>
+                                            <div th:each="balance : ${consent.jwt_payload.access.balances}">
+                                                <strong> - Balance IBAN:</strong> <span th:text="${balance.iban}"></span><br>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
                                 </label>
                             </div>
+
                         </div>
                         <span class="text-danger" id="accounts_error"></span>
                     </div>

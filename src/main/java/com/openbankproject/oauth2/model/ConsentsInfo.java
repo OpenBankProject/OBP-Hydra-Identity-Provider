@@ -1,6 +1,7 @@
 package com.openbankproject.oauth2.model;
 
 import java.util.stream.Stream;
+import java.util.List;
 
 public class ConsentsInfo {
     private ConsentInfo[] consents;
@@ -30,6 +31,8 @@ class ConsentInfo {
     private String status;
     private String api_standard;
     private String api_version;
+    private String jwt;
+    private JwtPayload jwt_payload;
 
     public String getConsent_id() {
         return consent_id;
@@ -93,5 +96,21 @@ class ConsentInfo {
 
     public void setApi_version(String api_version) {
         this.api_version = api_version;
+    }
+
+    public String getJwt() {
+        return jwt;
+    }
+
+    public void setJwt(String jwt) {
+        this.jwt = jwt;
+    }
+
+    public JwtPayload getJwt_payload() {
+        return jwt_payload;
+    }
+
+    public void setJwt_payload(JwtPayload jwt_payload) {
+        this.jwt_payload = jwt_payload;
     }
 }
