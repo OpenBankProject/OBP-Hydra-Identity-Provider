@@ -129,9 +129,11 @@ public class Oauth2Application {
         );
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(headers);
+        logger.info("Before getting direct login token");
         ResponseEntity<DirectLoginResponse> tokenResponse = restTemplate.exchange(directLoginUrl, HttpMethod.POST, entity, DirectLoginResponse.class);
 
         String directLoginToken = tokenResponse.getBody().getToken();
+        logger.info("After getting direct login token");
         HttpEntity<String> requestEntity = new HttpEntity<>(buildDirectLoginHeader(directLoginToken));
 
         return (String url) -> {

@@ -237,7 +237,11 @@ public class LoginController implements ServletContextAware {
 
             // rememberMe for 1 hour.
             acceptLoginRequest.rememberFor(3600L);
+            logger.info("Before calling Hydra accept OAuth2");
             OAuth2RedirectTo response = hydraAdmin.acceptOAuth2LoginRequest(login_challenge, acceptLoginRequest);
+            logger.info("hydraAdmin.acceptOAuth2LoginRequest: " + response.toJson());
+            logger.info("After calling Hydra accept OAuth2");
+            // It seems here we store direct login token in a session after successfully loging in on Hydra
             String directLoginToken = tokenResponse.getBody().getToken();
             session.setAttribute("directLoginToken", directLoginToken);
 
