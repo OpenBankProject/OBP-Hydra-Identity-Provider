@@ -244,7 +244,7 @@ public class LoginController implements ServletContextAware {
             // It seems here we store direct login token in a session after successfully loging in on Hydra
             String directLoginToken = tokenResponse.getBody().getToken();
             session.setAttribute("directLoginToken", directLoginToken);
-
+            logger.info("Before redirect");
             return "redirect:" + response.getRedirectTo();
         } catch (HttpClientErrorException e) {
             String errorMsg = e.getMessage().replaceFirst(".*?(OBP-\\d+.*?)\".+", "$1");
