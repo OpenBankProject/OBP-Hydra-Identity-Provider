@@ -1,10 +1,12 @@
 package com.openbankproject.oauth2;
 
+import com.openbankproject.SessionUtils;
 import com.openbankproject.oauth2.model.DirectLoginResponse;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
@@ -73,15 +75,35 @@ public class Oauth2Application {
 
         @Override
         public Response intercept(Chain chain) throws IOException {
+            // Log the request
             Request request = chain.request();
-
-            logger.info("=========================== request begin ================================================");
+            logger.info("=========================== Request Begin ================================================ Session ID : {}", SessionUtils.getSessionId());
             logger.info("=== Method : {}", request.method());
             logger.info("=== URL : {}", request.url());
             logger.info("=== Headers : {}", StringUtils.join(request.headers(), "; "));
-            logger.info("============================= request end ================================================");
+            logger.info("============================= Request End ================================================");
 
-            return chain.proceed(request);
+            // Proceed with the request and get the response
+            Response response;
+            try {
+                response = chain.proceed(request);
+            } catch (IOException e) {
+                logger.error("Request failed: {}", e.getMessage(), e);
+                throw e;
+            }
+
+            // Log the response
+            logger.info("=========================== Response Begin ================================================ Session ID : {}", SessionUtils.getSessionId());
+            logger.info("=== Status Code : {}", response.code());
+            logger.info("=== Headers : {}", StringUtils.join(response.headers(), "; "));
+            String responseBody = response.body() != null ? response.body().string().trim() : "No body";
+            logger.info("=== Response body : {}", responseBody);
+            logger.info("============================= Response End ================================================");
+
+            // Rebuild the response before returning (since .string() consumes the response body)
+            return response.newBuilder()
+                    .body(ResponseBody.create(response.body().contentType(), responseBody))
+                    .build();
         }
     }
 
